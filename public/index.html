@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plants vs Zombies Online</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <div id="main-menu" class="screen active">
+      <h1 class="game-title">🌻 Plants vs Zombies 🧟</h1>
+      <h2 class="subtitle">Online</h2>
+      <div class="menu-buttons">
+        <button class="menu-btn" id="btn-play" onclick="showScreen('role-select')">▶ Играть</button>
+        <button class="menu-btn" id="btn-inventory" onclick="showInventory()">🎒 Инвентарь</button>
+        <button class="menu-btn" id="btn-leaderboard" onclick="showLeaderboard()">🏆 Лидерборд</button>
+        <button class="menu-btn" id="btn-logout" onclick="logout()">🚪 Выйти</button>
+      </div>
+      <div id="user-info" class="user-info"></div>
+    </div>
+
+    <div id="role-select" class="screen">
+      <h2>Выберите сторону</h2>
+      <div class="role-buttons">
+        <button class="role-btn plant-btn" onclick="startMatchmaking('plant')">🌻 Растение</button>
+        <button class="role-btn zombie-btn" onclick="startMatchmaking('zombie')">🧟 Зомби</button>
+      </div>
+      <button class="back-btn" onclick="showScreen('main-menu')">← Назад</button>
+    </div>
+
+    <div id="waiting" class="screen">
+      <h2>⏳ Поиск противника...</h2>
+      <div class="spinner"></div>
+      <button class="cancel-btn" onclick="cancelMatchmaking()">Отменить</button>
+    </div>
+
+    <div id="inventory" class="screen">
+      <h2>🎒 Инвентарь</h2>
+      <div class="role-tabs">
+        <button class="tab-btn active" onclick="switchInventoryTab('plant')">🌻 Растения</button>
+        <button class="tab-btn" onclick="switchInventoryTab('zombie')">🧟 Зомби</button>
+      </div>
+      <div id="items-grid" class="items-grid"></div>
+      <div class="loadout-section">
+        <h3>Загрузить в слоты (6 слотов)</h3>
+        <div id="loadout-slots" class="loadout-slots"></div>
+        <button class="save-btn" onclick="saveLoadout()">💾 Сохранить</button>
+      </div>
+      <button class="back-btn" onclick="showScreen('main-menu')">← Назад</button>
+    </div>
+
+    <div id="leaderboard" class="screen">
+      <h2>🏆 Лидерборд</h2>
+      <table id="leaderboard-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Никнейм</th>
+            <th>Победы</th>
+            <th>Поражения</th>
+            <th>Всего игр</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+      <button class="back-btn" onclick="showScreen('main-menu')">← Назад</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/menu.js"></script>
+  <script src="js/inventory.js"></script>
+</body>
+</html>

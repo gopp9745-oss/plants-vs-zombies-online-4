@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Игра - Plants vs Zombies</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div id="game-container">
+    <div id="top-bar">
+      <div class="resource">
+        <span class="sun-icon">☀️</span>
+        <span id="sun-count">150</span>
+      </div>
+      <div id="role-indicator"></div>
+      <button id="surrender-btn" onclick="surrender()">Сдаться</button>
+    </div>
+
+    <div id="game-board">
+      <canvas id="game-canvas"></canvas>
+    </div>
+
+    <div id="action-bar">
+      <div id="items-bar" class="items-bar"></div>
+    </div>
+
+    <div id="overlay" class="overlay hidden">
+      <div id="overlay-content">
+        <h2 id="overlay-title"></h2>
+        <p id="overlay-message"></p>
+        <button id="overlay-btn" onclick="returnToMenu()">В меню</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
