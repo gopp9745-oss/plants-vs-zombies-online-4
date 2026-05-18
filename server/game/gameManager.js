@@ -72,17 +72,17 @@ class GameManager {
     }
   }
 
-  endGame(gameId, winner, { pool }) {
+  endGame(gameId, winner, db) {
     const game = this.games[gameId];
     if (!game || game.finished) return;
     game.finished = true;
     
     if (winner === 'plant') {
-      pool.query('UPDATE users SET wins = wins + 1 WHERE id = $1', [game.plantId]);
-      pool.query('UPDATE users SET losses = losses + 1 WHERE id = $1', [game.zombieId]);
+      db.query('UPDATE users SET wins = wins + 1 WHERE id = $1', [game.plantId]);
+      db.query('UPDATE users SET losses = losses + 1 WHERE id = $1', [game.zombieId]);
     } else {
-      pool.query('UPDATE users SET losses = losses + 1 WHERE id = $1', [game.plantId]);
-      pool.query('UPDATE users SET wins = wins + 1 WHERE id = $1', [game.zombieId]);
+      db.query('UPDATE users SET losses = losses + 1 WHERE id = $1', [game.plantId]);
+      db.query('UPDATE users SET wins = wins + 1 WHERE id = $1', [game.zombieId]);
     }
   }
 

@@ -4,7 +4,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 require('dotenv').config();
 
-const { initDB, pool } = require('./db');
+const { initDB, query } = require('./db');
 const authRoutes = require('./routes/auth');
 const leaderboardRoutes = require('./routes/leaderboard');
 const inventoryRoutes = require('./routes/inventory');
@@ -102,7 +102,7 @@ io.on('connection', (socket) => {
       state.gameOver = true;
       state.winner = winner;
       
-      gameManager.endGame(gameId, winner, { pool });
+      gameManager.endGame(gameId, winner, { query });
       io.to(gameId).emit('game_over', { winner });
     }
   });

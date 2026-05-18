@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { pool } = require('../db');
+const { query } = require('../db');
 const router = express.Router();
 
 router.post('/register', async (req, res) => {
@@ -15,19 +15,20 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Nickname min 3 chars, password min 4 chars' });
     }
     
-    const existing = await pool.query('SELECT id FROM users WHERE nickname = $1', [nickname]);
+    const existing = await query('SELECT id FROM users WHERE nickname = $1', [nickname]);
     if (existing.rows.length > 0) {
       return res.status(409).json({ error: 'Nickname already taken' });
     }
     
     const passwordHash = await bcrypt.hash(password, 10);
-    const result = await pool.query(
+    const result = await query(
       'INSERT INTO users (nickname, password_hash) VALUES ($1, $2) RETURNING id, nickname, wins, losses',
       [nickname, passwordHash]
     );
     
     const user = result.rows[0];
-    await pool.query('INSERT INTO loadouts (user_id, role) VALUES ($1, $2), ($1, $3)', [user.id, 'plant', 'zombie']);
+    await query('INSERT INTO loadouts (user_id, role) VALUES ($1, $2)', [user.id, 'plant']);
+    await query('INSERT INTO loadouts (user_id, role) VALUES ($1, $2)', [user.id, 'zombie']);
     
     res.json({ message: 'Registered successfully', user });
   } catch (err) {
@@ -40,7 +41,7 @@ router.post('/login', async (req, res) => {
   try {
     const { nickname, password } = req.body;
     
-    const result = await pool.query('SELECT * FROM users WHERE nickname = $1', [nickname]);
+    const result = await query('SELECT * FROM users WHERE nickname = $1', [nickname]);
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }

@@ -1,5 +1,5 @@
 const express = require('express');
-const { pool } = require('../db');
+const { query } = require('../db');
 const router = express.Router();
 
 const PLANTS = [
@@ -31,7 +31,7 @@ router.get('/items', (req, res) => {
 router.get('/loadout/:userId/:role', async (req, res) => {
   try {
     const { userId, role } = req.params;
-    const result = await pool.query('SELECT * FROM loadouts WHERE user_id = $1 AND role = $2', [userId, role]);
+    const result = await query('SELECT * FROM loadouts WHERE user_id = $1 AND role = $2', [userId, role]);
     res.json(result.rows[0] || null);
   } catch (err) {
     console.error(err);
@@ -44,15 +44,15 @@ router.post('/loadout/:userId/:role', async (req, res) => {
     const { userId, role } = req.params;
     const { slot1, slot2, slot3, slot4, slot5, slot6 } = req.body;
     
-    const existing = await pool.query('SELECT id FROM loadouts WHERE user_id = $1 AND role = $2', [userId, role]);
+    const existing = await query('SELECT id FROM loadouts WHERE user_id = $1 AND role = $2', [userId, role]);
     
     if (existing.rows.length > 0) {
-      await pool.query(
+      await query(
         'UPDATE loadouts SET slot1=$1, slot2=$2, slot3=$3, slot4=$4, slot5=$5, slot6=$6 WHERE user_id=$7 AND role=$8',
         [slot1, slot2, slot3, slot4, slot5, slot6, userId, role]
       );
     } else {
-      await pool.query(
+      await query(
         'INSERT INTO loadouts (user_id, role, slot1, slot2, slot3, slot4, slot5, slot6) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
         [userId, role, slot1, slot2, slot3, slot4, slot5, slot6]
       );
