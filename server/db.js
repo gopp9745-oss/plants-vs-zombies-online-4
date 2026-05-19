@@ -3,155 +3,122 @@ const fs = require('fs');
 
 const DB_FILE = path.join(__dirname, '..', 'game.db');
 
-let db = {
-  users: [],
-  inventories: [],
-  loadouts: []
-};
+let db = { users: [], inventories: [], loadouts: [] };
 
 function loadDB() {
   if (fs.existsSync(DB_FILE)) {
     try {
-      const data = fs.readFileSync(DB_FILE, 'utf8');
-      db = JSON.parse(data);
-    } catch (err) {
-      console.log('Creating new database');
-    }
+      db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    } catch (_) {}
   }
+  if (!db.users) db.users = [];
+  if (!db.inventories) db.inventories = [];
+  if (!db.loadouts) db.loadouts = [];
 }
 
 function saveDB() {
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
 }
 
-function ensureTables() {
-  loadDB();
-  if (!db.users) db.users = [];
-  if (!db.inventories) db.inventories = [];
-  if (!db.loadouts) db.loadouts = [];
-  saveDB();
+let postgresClient = null;
+
+async function tryPostgres() {
+  const url = process.env.DATABASE_URL;
+  if (!url) return false;
+  try {
+    const { Pool } = require('pg');
+    const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: false } });
+    await pool.query('SELECT 1');
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        nickname VARCHAR(50) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        wins INTEGER DEFAULT 0,
+        losses INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS loadouts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        role VARCHAR(20) NOT NULL,
+        slot1 INTEGER, slot2 INTEGER, slot3 INTEGER,
+        slot4 INTEGER, slot5 INTEGER, slot6 INTEGER
+      )
+    `);
+    postgresClient = pool;
+    console.log('PostgreSQL connected');
+    return true;
+  } catch (e) {
+    console.log('PostgreSQL unavailable, using file-based DB');
+    return false;
+  }
 }
 
-ensureTables();
-
 const query = async (sql, params = []) => {
+  if (postgresClient) {
+    return await postgresClient.query(sql, params);
+  }
+
   loadDB();
-  
-  if (sql.includes('CREATE TABLE')) {
-    return { rows: [] };
-  }
-  
-  if (sql.includes('INSERT INTO users')) {
-    const match = sql.match(/VALUES \(\$1, \$2\)/i);
-    if (match) {
-      const id = db.users.length > 0 ? Math.max(...db.users.map(u => u.id)) + 1 : 1;
+
+  if (sql.startsWith('CREATE TABLE') || sql.includes('RETURNING')) {
+    if (sql.includes('INSERT INTO users')) {
+      const id = db.users.length ? Math.max(...db.users.map(u => u.id)) + 1 : 1;
       const user = {
-        id,
-        nickname: params[0],
-        password_hash: params[1],
-        wins: 0,
-        losses: 0,
-        created_at: new Date().toISOString()
+        id, nickname: params[0], password_hash: params[1],
+        wins: 0, losses: 0, created_at: new Date().toISOString()
       };
-      db.users.push(user);
-      saveDB();
-      return { rows: [{ id: user.id, nickname: user.nickname, wins: 0, losses: 0 }] };
+      db.users.push(user); saveDB();
+      return { rows: [{ id, nickname: params[0], wins: 0, losses: 0 }] };
     }
+    return { rows: [] };
   }
-  
-  if (sql.includes('INSERT INTO loadouts')) {
-    const valuesMatch = sql.match(/VALUES \(([^)]+)\)/i);
-    if (valuesMatch) {
-      const placeholders = valuesMatch[1].split(',').map(p => p.trim().replace(/\$/g, ''));
-      const id = db.loadouts.length > 0 ? Math.max(...db.loadouts.map(l => l.id)) + 1 : 1;
-      const loadout = {
-        id,
-        user_id: params[0],
-        role: params[1],
-        slot1: params[2] || null,
-        slot2: params[3] || null,
-        slot3: params[4] || null,
-        slot4: params[5] || null,
-        slot5: params[6] || null,
-        slot6: params[7] || null
-      };
-      db.loadouts.push(loadout);
-      saveDB();
-      return { rows: [] };
-    }
+
+  if (sql.includes('INSERT INTO loadouts (user_id, role)')) {
+    const id = db.loadouts.length ? Math.max(...db.loadouts.map(l => l.id)) + 1 : 1;
+    db.loadouts.push({ id, user_id: parseInt(params[0]), role: params[1], slot1: null, slot2: null, slot3: null, slot4: null, slot5: null, slot6: null });
+    saveDB();
+    return { rows: [] };
   }
-  
-  if (sql.includes('SELECT * FROM users WHERE nickname')) {
-    const users = db.users.filter(u => u.nickname === params[0]);
-    return { rows: users };
+
+  if (sql.startsWith('SELECT') && sql.includes('users WHERE nickname')) {
+    const found = db.users.filter(u => u.nickname === params[0]);
+    return { rows: found };
   }
-  
-  if (sql.includes('SELECT id FROM users WHERE nickname')) {
-    const users = db.users.filter(u => u.nickname === params[0]);
-    return { rows: users.map(u => ({ id: u.id })) };
-  }
-  
-  if (sql.includes('SELECT nickname, wins, losses')) {
+
+  if (sql.includes('ORDER BY wins DESC')) {
     const sorted = [...db.users].sort((a, b) => b.wins - a.wins).slice(0, 50);
-    return { 
-      rows: sorted.map(u => ({
-        nickname: u.nickname,
-        wins: u.wins,
-        losses: u.losses,
-        total_games: u.wins + u.losses
-      }))
-    };
+    return { rows: sorted.map(u => ({ nickname: u.nickname, wins: u.wins, losses: u.losses, total_games: u.wins + u.losses })) };
   }
-  
-  if (sql.includes('SELECT * FROM loadouts WHERE user_id')) {
-    const loadouts = db.loadouts.filter(l => l.user_id == params[0] && l.role === params[1]);
-    return { rows: loadouts };
+
+  if (sql.startsWith('SELECT') && sql.includes('loadouts WHERE user_id')) {
+    const found = db.loadouts.filter(l => l.user_id == params[0] && l.role === params[1]);
+    return { rows: found };
   }
-  
-  if (sql.includes('SELECT id FROM loadouts WHERE user_id')) {
-    const loadouts = db.loadouts.filter(l => l.user_id == params[0] && l.role === params[1]);
-    return { rows: loadouts };
-  }
-  
+
   if (sql.includes('UPDATE loadouts SET')) {
-    const loadout = db.loadouts.find(l => l.user_id == params[6] && l.role === params[7]);
-    if (loadout) {
-      loadout.slot1 = params[0];
-      loadout.slot2 = params[1];
-      loadout.slot3 = params[2];
-      loadout.slot4 = params[3];
-      loadout.slot5 = params[4];
-      loadout.slot6 = params[5];
-      saveDB();
-    }
+    const l = db.loadouts.find(l => l.user_id == params[6] && l.role === params[7]);
+    if (l) { l.slot1 = params[0]; l.slot2 = params[1]; l.slot3 = params[2]; l.slot4 = params[3]; l.slot5 = params[4]; l.slot6 = params[5]; saveDB(); }
     return { rows: [] };
   }
-  
-  if (sql.includes('UPDATE users SET wins = wins + 1')) {
+
+  if (sql.includes('UPDATE users SET')) {
     const user = db.users.find(u => u.id == params[0]);
     if (user) {
-      user.wins++;
+      if (sql.includes('wins = wins + 1')) user.wins++;
+      if (sql.includes('losses = losses + 1')) user.losses++;
       saveDB();
     }
     return { rows: [] };
   }
-  
-  if (sql.includes('UPDATE users SET losses = losses + 1')) {
-    const user = db.users.find(u => u.id == params[0]);
-    if (user) {
-      user.losses++;
-      saveDB();
-    }
-    return { rows: [] };
-  }
-  
+
   return { rows: [] };
 };
 
-module.exports = { 
-  query, 
-  initDB: async () => {
-    ensureTables();
-    console.log('SQLite-like database initialized (file-based)');
-  }
+module.exports = {
+  query,
+  initDB: tryPostgres
 };
