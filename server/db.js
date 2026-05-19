@@ -78,8 +78,8 @@ async function mongoQuery(sql, params) {
     return { rows: users.map(u => ({ nickname: u.nickname, wins: u.wins, losses: u.losses, total_games: u.wins + u.losses })) };
   }
 
-  if (sql.includes('INSERT INTO loadouts (user_id, role)')) {
-    await Loadout.create({ userId: parseInt(params[0]), role: params[1] });
+  if (sql.includes('INSERT INTO loadouts')) {
+    await Loadout.create({ userId: Number(params[0]), role: params[1], slot1: params[2] || null, slot2: params[3] || null, slot3: params[4] || null, slot4: params[5] || null, slot5: params[6] || null, slot6: params[7] || null });
     return { rows: [] };
   }
 
@@ -120,9 +120,9 @@ function fileQuery(sql, params) {
     return { rows: [{ id, nickname: params[0], wins: 0, losses: 0 }] };
   }
 
-  if (sql.includes('INSERT INTO loadouts (user_id, role)')) {
+  if (sql.includes('INSERT INTO loadouts')) {
     const id = fileDb.loadouts.length ? Math.max(...fileDb.loadouts.map(l => l.id)) + 1 : 1;
-    fileDb.loadouts.push({ id, user_id: params[0], role: params[1], slot1: null, slot2: null, slot3: null, slot4: null, slot5: null, slot6: null });
+    fileDb.loadouts.push({ id, user_id: Number(params[0]), role: params[1], slot1: params[2] || null, slot2: params[3] || null, slot3: params[4] || null, slot4: params[5] || null, slot5: params[6] || null, slot6: params[7] || null });
     saveFileDb();
     return { rows: [] };
   }
@@ -136,11 +136,11 @@ function fileQuery(sql, params) {
   }
 
   if (sql.includes('loadouts WHERE user_id')) {
-    return { rows: fileDb.loadouts.filter(l => l.user_id == params[0] && l.role === params[1]) };
+    return { rows: fileDb.loadouts.filter(l => Number(l.user_id) === Number(params[0]) && l.role === params[1]) };
   }
 
   if (sql.includes('UPDATE loadouts SET')) {
-    const l = fileDb.loadouts.find(l => l.user_id == params[6] && l.role === params[7]);
+    const l = fileDb.loadouts.find(l => Number(l.user_id) === Number(params[6]) && l.role === params[7]);
     if (l) { l.slot1 = params[0]; l.slot2 = params[1]; l.slot3 = params[2]; l.slot4 = params[3]; l.slot5 = params[4]; l.slot6 = params[5]; saveFileDb(); }
     return { rows: [] };
   }

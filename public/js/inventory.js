@@ -32,13 +32,13 @@ async function loadInventory() {
   }
 }
 
-function switchInventoryTab(tab) {
+function switchInventoryTab(tab, el) {
   inventoryTab = tab;
   selectedItem = null;
   currentLoadout = [null, null, null, null, null, null];
   
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-  event.target.classList.add('active');
+  el.classList.add('active');
   
   loadInventory();
 }
