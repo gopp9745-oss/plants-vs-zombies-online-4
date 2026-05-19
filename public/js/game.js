@@ -2,13 +2,13 @@ const socket = io();
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
-canvas.width = 900;
-canvas.height = 500;
+canvas.width = 1000;
+canvas.height = 580;
 
-const COLS = 9;
-const ROWS = 5;
-const CELL_WIDTH = canvas.width / COLS;
-const CELL_HEIGHT = canvas.height / ROWS;
+const COLS = 10;
+const ROWS = 6;
+const CELL_WIDTH = 80;
+const CELL_HEIGHT = 80;
 
 const params = new URLSearchParams(window.location.search);
 const gameId = params.get('gameId');
@@ -21,6 +21,7 @@ let selectedAction = null;
 let itemsList = [];
 let sunInterval = null;
 let zombieSunInterval = null;
+let readySent = false;
 
 const plantEmojis = ['🌻', '🌱', '🥜', '🍒', '❄️', '🔁', '💣', '👯'];
 const zombieEmojis = ['🧟', '🧟‍♂️', '🪖', '🏃', '👹', '💃', '🏈', '🎣'];
@@ -50,18 +51,27 @@ function init() {
 
   document.getElementById('opponent-info').textContent = 
     role === 'plant' ? `🧟 Противник: ${zombieNickname}` : `🌻 Противник: ${plantNickname}`;
-  
-  showReadyScreen();
+
   loadItems();
   setupEventListeners();
+
+  socket.emit('join_game_room', { gameId, role });
 }
+
+socket.on('joined_game_room', () => {
+  showReadyScreen();
+});
+
+socket.on('both_connected', () => {
+  if (!readySent) showReadyScreen();
+});
 
 function showReadyScreen() {
   const overlay = document.getElementById('overlay');
   const title = document.getElementById('overlay-title');
   const message = document.getElementById('overlay-message');
   const btn = document.getElementById('overlay-btn');
-  
+
   title.textContent = '🌻 vs 🧟';
   title.style.color = '#FFD700';
   message.innerHTML = `
@@ -81,6 +91,7 @@ function showReadyScreen() {
   btn.textContent = '✅ Готов!';
   btn.onclick = () => {
     overlay.classList.add('hidden');
+    readySent = true;
     socket.emit('player_ready', { gameId, role });
     startGameLoops();
   };
@@ -101,26 +112,18 @@ async function loadItems() {
 function renderActionBar() {
   const bar = document.getElementById('items-bar');
   bar.innerHTML = '';
-  
+
   itemsList.forEach((item, index) => {
     const div = document.createElement('div');
     div.className = 'action-item';
-    
     const emoji = role === 'plant' ? plantEmojis[index] : zombieEmojis[index];
-    const cost = role === 'plant' ? `☀️${item.cost}` : item.hp ? `❤️${item.hp}` : `💰${item.cost}`;
-    
-    div.innerHTML = `
-      <div class="emoji">${emoji}</div>
-      <div class="name">${item.name}</div>
-      <div class="cost">${cost}</div>
-    `;
-    
+    const cost = role === 'plant' ? `☀️${item.cost}` : `❤️${item.hp}`;
+    div.innerHTML = `<div class="emoji">${emoji}</div><div class="name">${item.name}</div><div class="cost">${cost}</div>`;
     div.onclick = () => {
       selectedAction = item;
       document.querySelectorAll('.action-item').forEach(i => i.classList.remove('selected'));
       div.classList.add('selected');
     };
-    
     bar.appendChild(div);
   });
 }
@@ -131,14 +134,15 @@ function setupEventListeners() {
 
 function handleCanvasClick(e) {
   if (!gameState || gameState.gameOver) return;
-  
   const rect = canvas.getBoundingClientRect();
   const x = (e.clientX - rect.left) * (canvas.width / rect.width);
   const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-  
-  const col = Math.floor(x / CELL_WIDTH);
-  const row = Math.floor(y / CELL_HEIGHT);
-  
+
+  const col = Math.floor((x - 160) / CELL_WIDTH);
+  const row = Math.floor((y - 40) / CELL_HEIGHT);
+
+  if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return;
+
   if (role === 'plant' && selectedAction) {
     placePlant(row, col);
   } else if (role === 'zombie' && selectedAction) {
@@ -147,40 +151,24 @@ function handleCanvasClick(e) {
 }
 
 function placePlant(row, col) {
-  if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
   if (gameState.grid[row][col]) return;
   if (gameState.plantSun < selectedAction.cost) return;
-  
-  socket.emit('game_action', {
-    gameId,
-    action: 'place_plant',
-    data: { row, col, plantId: selectedAction.id, cost: selectedAction.cost }
-  });
+  socket.emit('game_action', { gameId, action: 'place_plant', data: { row, col, plantId: selectedAction.id, cost: selectedAction.cost } });
 }
 
 function spawnZombie(row) {
-  if (row < 0 || row >= ROWS) return;
   if (gameState.zombieSun < selectedAction.cost) return;
-  
-  socket.emit('game_action', {
-    gameId,
-    action: 'spawn_zombie',
-    data: { row, zombieId: selectedAction.id, cost: selectedAction.cost, hp: selectedAction.hp, speed: selectedAction.speed }
-  });
+  socket.emit('game_action', { gameId, action: 'spawn_zombie', data: { row, zombieId: selectedAction.id, cost: selectedAction.cost, hp: selectedAction.hp, speed: selectedAction.speed } });
 }
 
 function startGameLoops() {
   if (role === 'plant') {
     sunInterval = setInterval(() => {
-      socket.emit('game_action', {
-        gameId, action: 'collect_sun', data: { amount: 25 }
-      });
+      socket.emit('game_action', { gameId, action: 'collect_sun', data: { amount: 25 } });
     }, 5000);
   } else {
     zombieSunInterval = setInterval(() => {
-      socket.emit('game_action', {
-        gameId, action: 'zombie_earn_sun', data: { amount: 25 }
-      });
+      socket.emit('game_action', { gameId, action: 'zombie_earn_sun', data: { amount: 25 } });
     }, 6000);
   }
 }
@@ -199,38 +187,34 @@ socket.on('game_state', (state) => {
 socket.on('game_over', ({ winner }) => {
   clearInterval(sunInterval);
   clearInterval(zombieSunInterval);
-  
   const overlay = document.getElementById('overlay');
   const title = document.getElementById('overlay-title');
   const message = document.getElementById('overlay-message');
   const btn = document.getElementById('overlay-btn');
-  
   overlay.classList.remove('hidden');
-  
   if (winner === role) {
-    title.textContent = '🎉 Победа!';
-    title.style.color = '#4CAF50';
+    title.textContent = '🎉 Победа!'; title.style.color = '#4CAF50';
     message.textContent = 'Отлично сыграно!';
   } else {
-    title.textContent = '💀 Поражение';
-    title.style.color = '#f44336';
+    title.textContent = '💀 Поражение'; title.style.color = '#f44336';
     message.textContent = 'В следующий раз повезёт!';
   }
-  
   btn.textContent = '🏠 В меню';
   btn.onclick = returnToMenu;
 });
 
 function updateSunDisplay() {
   if (!gameState) return;
-  const sun = role === 'plant' ? gameState.plantSun : gameState.zombieSun;
-  document.getElementById('sun-count').textContent = sun;
+  document.getElementById('sun-count').textContent = role === 'plant' ? gameState.plantSun : gameState.zombieSun;
 }
 
 function render() {
   if (!gameState) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawHouse();
   drawGrid();
+  drawLawnDecor();
+  drawPaths();
   drawNicknames();
   drawPlants();
   drawZombies();
@@ -238,16 +222,66 @@ function render() {
   drawHPBars();
 }
 
+function drawHouse() {
+  const x = 0, y = 40, w = 160, h = CELL_HEIGHT * ROWS;
+  ctx.fillStyle = '#8B4513';
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = '#A0522D';
+  ctx.fillRect(x + 10, y + 10, w - 20, h - 20);
+  ctx.fillStyle = '#FFD700';
+  ctx.font = '35px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🏠', w / 2, y + h / 2);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 11px Arial';
+  ctx.textBaseline = 'top';
+  ctx.fillText('ВАШ ДОМ', w / 2, y + h - 25);
+}
+
 function drawGrid() {
+  const gx = 160, gy = 40;
   for (let row = 0; row < ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
-      const x = col * CELL_WIDTH;
-      const y = row * CELL_HEIGHT;
-      ctx.fillStyle = (row + col) % 2 === 0 ? '#1a6e1a' : '#2d8c2d';
+      const x = gx + col * CELL_WIDTH;
+      const y = gy + row * CELL_HEIGHT;
+      ctx.fillStyle = (row + col) % 2 === 0 ? '#3a8c2a' : '#4ca832';
       ctx.fillRect(x, y, CELL_WIDTH, CELL_HEIGHT);
-      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+      ctx.strokeStyle = 'rgba(0,40,0,0.25)';
+      ctx.lineWidth = 1;
       ctx.strokeRect(x, y, CELL_WIDTH, CELL_HEIGHT);
     }
+  }
+}
+
+function drawLawnDecor() {
+  const gx = 160, gy = 40;
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const x = gx + col * CELL_WIDTH;
+      const y = gy + row * CELL_HEIGHT;
+      ctx.fillStyle = (row + col) % 2 === 0 ? 'rgba(0,80,0,0.2)' : 'rgba(0,60,0,0.15)';
+      for (let i = 0; i < 3; i++) {
+        const gx2 = x + 15 + (i * 25) + (row % 2) * 10;
+        const gy2 = y + 20 + (i * 20) + (col % 2) * 8;
+        ctx.beginPath();
+        ctx.arc(gx2, gy2, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+function drawPaths() {
+  const gx = 160, gy = 40;
+  ctx.strokeStyle = 'rgba(139,69,19,0.2)';
+  ctx.lineWidth = 2;
+  for (let row = 0; row < ROWS; row++) {
+    const y = gy + row * CELL_HEIGHT + CELL_HEIGHT / 2;
+    ctx.beginPath();
+    ctx.moveTo(gx, y);
+    ctx.lineTo(gx + COLS * CELL_WIDTH, y);
+    ctx.stroke();
   }
 }
 
@@ -255,14 +289,12 @@ function drawNicknames() {
   ctx.font = 'bold 14px Arial';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(5, canvas.height - 28, 200, 24);
+  ctx.fillRect(5, canvas.height - 28, 220, 24);
   ctx.fillStyle = '#4CAF50';
   ctx.fillText(`🌻 ${plantNickname || 'Растение'}`, 10, canvas.height - 24);
-  
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(canvas.width - 205, canvas.height - 28, 200, 24);
+  ctx.fillRect(canvas.width - 225, canvas.height - 28, 220, 24);
   ctx.fillStyle = '#9C27B0';
   ctx.textAlign = 'right';
   ctx.fillText(`${zombieNickname || 'Зомби'} 🧟`, canvas.width - 10, canvas.height - 24);
@@ -275,15 +307,15 @@ function drawPlants() {
     for (let col = 0; col < COLS; col++) {
       const cell = gameState.grid[row][col];
       if (cell) {
-        const x = col * CELL_WIDTH + CELL_WIDTH / 2;
-        const y = row * CELL_HEIGHT + CELL_HEIGHT / 2;
+        const x = 160 + col * CELL_WIDTH + CELL_WIDTH / 2;
+        const y = 40 + row * CELL_HEIGHT + CELL_HEIGHT / 2;
         const plant = PLANTS[cell.type];
         if (plant) {
-          ctx.font = '40px serif';
+          ctx.font = '44px serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(plant.emoji, x, y);
-          if (cell.hp < 100) drawMiniHPBar(x, y - 30, cell.hp, 100);
+          if (cell.hp < 100) drawMiniHPBar(x, y - 32, cell.hp, 100);
         }
       }
     }
@@ -292,70 +324,63 @@ function drawPlants() {
 
 function drawZombies() {
   if (!gameState.zombies) return;
-  gameState.zombies.forEach(zombie => {
-    const x = zombie.col * CELL_WIDTH + CELL_WIDTH / 2;
-    const y = zombie.row * CELL_HEIGHT + CELL_HEIGHT / 2;
-    const zData = ZOMBIES[zombie.type];
-    if (zData) {
-      ctx.font = '40px serif';
+  gameState.zombies.forEach(z => {
+    const x = 160 + z.col * CELL_WIDTH + CELL_WIDTH / 2;
+    const y = 40 + z.row * CELL_HEIGHT + CELL_HEIGHT / 2;
+    const zd = ZOMBIES[z.type];
+    if (zd) {
+      ctx.font = '44px serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(zData.emoji, x, y);
-      drawMiniHPBar(x, y - 30, zombie.hp, zombie.maxHp);
+      ctx.fillText(zd.emoji, x, y);
+      drawMiniHPBar(x, y - 32, z.hp, z.maxHp);
     }
   });
 }
 
 function drawProjectiles() {
   if (!gameState.projectiles) return;
-  gameState.projectiles.forEach(proj => {
+  gameState.projectiles.forEach(p => {
     ctx.fillStyle = '#00FF00';
     ctx.beginPath();
-    ctx.arc(proj.x, proj.y, 5, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
     ctx.fill();
   });
 }
 
 function drawHPBars() {
   if (!gameState) return;
-  const barWidth = 200;
-  const barHeight = 22;
-  
+  const bw = 180, bh = 20;
+  const gx = 10, gy = 5;
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.roundRect(10, 10, barWidth, barHeight, 5);
-  ctx.fill();
+  ctx.fillRect(gx, gy, bw, bh);
   ctx.fillStyle = '#4CAF50';
-  ctx.roundRect(10, 10, barWidth * (gameState.plantHP / 100), barHeight, 5);
-  ctx.fill();
+  ctx.fillRect(gx, gy, bw * (gameState.plantHP / 100), bh);
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 12px Arial';
+  ctx.font = 'bold 11px Arial';
   ctx.textAlign = 'center';
-  ctx.fillText(`🏠 Дом: ${Math.round(gameState.plantHP)}%`, 10 + barWidth / 2, 25);
-  
+  ctx.fillText(`🏠 Дом: ${Math.round(gameState.plantHP)}%`, gx + bw / 2, gy + 14);
+
+  const rw = canvas.width - 10 - bw;
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.roundRect(canvas.width - 10 - barWidth, 10, barWidth, barHeight, 5);
-  ctx.fill();
+  ctx.fillRect(rw, gy, bw, bh);
   ctx.fillStyle = '#9C27B0';
-  ctx.roundRect(canvas.width - 10 - barWidth, 10, barWidth * (gameState.zombieHP / 100), barHeight, 5);
-  ctx.fill();
+  ctx.fillRect(rw, gy, bw * (gameState.zombieHP / 100), bh);
   ctx.fillStyle = '#fff';
-  ctx.fillText(`💀 База: ${Math.round(gameState.zombieHP)}%`, canvas.width - 10 - barWidth / 2, 25);
+  ctx.fillText(`💀 База: ${Math.round(gameState.zombieHP)}%`, rw + bw / 2, gy + 14);
 }
 
 function drawMiniHPBar(x, y, hp, maxHp) {
-  const width = 40;
-  const height = 5;
+  const w = 40, h = 5;
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.fillRect(x - width / 2, y, width, height);
+  ctx.fillRect(x - w / 2, y, w, h);
   ctx.fillStyle = hp > maxHp * 0.5 ? '#4CAF50' : hp > maxHp * 0.25 ? '#FF9800' : '#f44336';
-  ctx.fillRect(x - width / 2, y, width * (hp / maxHp), height);
+  ctx.fillRect(x - w / 2, y, w * (hp / maxHp), h);
 }
 
 function surrender() {
   if (confirm('Вы уверены что хотите сдаться?')) {
-    socket.emit('game_action', {
-      gameId, action: 'surrender', data: {}
-    });
+    socket.emit('game_action', { gameId, action: 'surrender', data: { role } });
   }
 }
 
@@ -366,7 +391,7 @@ function returnToMenu() {
   window.location.href = '/';
 }
 
-if (!role || !gameId) {
+if (!gameId || !role) {
   window.location.href = '/';
 } else {
   init();
