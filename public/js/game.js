@@ -17,13 +17,17 @@ const plantNickname = sessionStorage.getItem('plantNickname');
 const zombieNickname = sessionStorage.getItem('zombieNickname');
 
 let gameState = null;
+let prevGameState = null;
+let stateTimestamp = 0;
 let selectedAction = null;
 let itemsList = [];
 let sunInterval = null;
 let zombieSunInterval = null;
 let timerInterval = null;
 let readySent = false;
+let animFrameId = null;
 const GAME_DURATION = 300;
+const INTERPOLATION_DELAY = 100;
 
 const plantEmojis = ['🌻', '🌱', '🥜', '🍒', '❄️', '🔁', '💣', '👯'];
 const zombieEmojis = ['🧟', '🧟‍♂️', '🪖', '🏃', '👹', '💃', '🏈', '🎣'];
@@ -45,6 +49,46 @@ const ZOMBIES = {
   5: { name: 'Гигант', cost: 150, hp: 500, speed: 0.5, emoji: '👹' },
   6: { name: 'Танцор', cost: 125, hp: 150, speed: 1.2, emoji: '💃' }
 };
+
+function getInterpolationFactor() {
+  const now = performance.now();
+  const elapsed = now - stateTimestamp;
+  const t = Math.max(0, Math.min(1, (elapsed - INTERPOLATION_DELAY) / 400));
+  return t;
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function getInterpolatedZombie(z) {
+  if (!prevGameState || !prevGameState.zombies) return z;
+  const prev = prevGameState.zombies.find(pz => pz.id === z.id);
+  if (!prev) return z;
+  const t = getInterpolationFactor();
+  return {
+    ...z,
+    col: lerp(prev.col, z.col, t),
+    hp: Math.round(lerp(prev.hp, z.hp, t))
+  };
+}
+
+function getInterpolatedProjectile(p) {
+  if (!prevGameState || !prevGameState.projectiles) return p;
+  const prev = prevGameState.projectiles.find(pp => pp.row === p.row && pp.col === p.col);
+  if (!prev) return p;
+  const t = getInterpolationFactor();
+  return {
+    ...p,
+    col: lerp(prev.col, p.col, t)
+  };
+}
+
+function getInterpolatedHP() {
+  if (!prevGameState) return gameState.plantHP;
+  const t = getInterpolationFactor();
+  return lerp(prevGameState.plantHP, gameState.plantHP, t);
+}
 
 function init() {
   const indicator = document.getElementById('role-indicator');
@@ -176,24 +220,28 @@ function startGameLoops() {
 }
 
 socket.on('game_start', ({ state }) => {
+  prevGameState = null;
   gameState = state;
+  stateTimestamp = performance.now();
   updateSunDisplay();
   updateTimerDisplay();
   startLocalTimer();
-  render();
+  startAnimationLoop();
 });
 
 socket.on('game_state', (state) => {
+  prevGameState = gameState ? JSON.parse(JSON.stringify(gameState)) : null;
   gameState = state;
+  stateTimestamp = performance.now();
   updateSunDisplay();
   updateTimerDisplay();
-  render();
 });
 
 socket.on('game_over', ({ winner, admin }) => {
   clearInterval(sunInterval);
   clearInterval(zombieSunInterval);
   clearInterval(timerInterval);
+  if (animFrameId) cancelAnimationFrame(animFrameId);
   const overlay = document.getElementById('overlay');
   const title = document.getElementById('overlay-title');
   const message = document.getElementById('overlay-message');
@@ -218,6 +266,7 @@ socket.on('admin_kicked', () => {
   clearInterval(sunInterval);
   clearInterval(zombieSunInterval);
   clearInterval(timerInterval);
+  if (animFrameId) cancelAnimationFrame(animFrameId);
   const overlay = document.getElementById('overlay');
   const title = document.getElementById('overlay-title');
   const message = document.getElementById('overlay-message');
@@ -229,6 +278,15 @@ socket.on('admin_kicked', () => {
   btn.onclick = returnToMenu;
   overlay.classList.remove('hidden');
 });
+
+function startAnimationLoop() {
+  function loop() {
+    if (!gameState || gameState.gameOver) return;
+    render();
+    animFrameId = requestAnimationFrame(loop);
+  }
+  animFrameId = requestAnimationFrame(loop);
+}
 
 function updateSunDisplay() {
   if (!gameState) return;
@@ -368,7 +426,8 @@ function drawPlants() {
 function drawZombies() {
   if (!gameState.zombies) return;
   gameState.zombies.forEach(z => {
-    const x = 160 + z.col * CELL_WIDTH + CELL_WIDTH / 2;
+    const iz = getInterpolatedZombie(z);
+    const x = 160 + iz.col * CELL_WIDTH + CELL_WIDTH / 2;
     const y = 40 + z.row * CELL_HEIGHT + CELL_HEIGHT / 2;
     const zd = ZOMBIES[z.type];
     if (zd) {
@@ -376,7 +435,7 @@ function drawZombies() {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(zd.emoji, x, y);
-      drawMiniHPBar(x, y - 32, z.hp, z.maxHp);
+      drawMiniHPBar(x, y - 32, iz.hp, z.maxHp);
     }
   });
 }
@@ -384,7 +443,8 @@ function drawZombies() {
 function drawProjectiles() {
   if (!gameState.projectiles) return;
   gameState.projectiles.forEach(p => {
-    const x = 160 + p.col * CELL_WIDTH + CELL_WIDTH / 2;
+    const ip = getInterpolatedProjectile(p);
+    const x = 160 + ip.col * CELL_WIDTH + CELL_WIDTH / 2;
     const y = 40 + p.row * CELL_HEIGHT + CELL_HEIGHT / 2;
     ctx.fillStyle = '#00FF00';
     ctx.beginPath();
@@ -397,14 +457,15 @@ function drawHPBars() {
   if (!gameState) return;
   const bw = 180, bh = 20;
   const gx = 10, gy = 5;
+  const hp = getInterpolatedHP();
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
   ctx.fillRect(gx, gy, bw, bh);
   ctx.fillStyle = '#4CAF50';
-  ctx.fillRect(gx, gy, bw * (gameState.plantHP / 100), bh);
+  ctx.fillRect(gx, gy, bw * (hp / 100), bh);
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 11px Arial';
   ctx.textAlign = 'center';
-  ctx.fillText(`🏠 Дом: ${Math.round(gameState.plantHP)}%`, gx + bw / 2, gy + 14);
+  ctx.fillText(`🏠 Дом: ${Math.round(hp)}%`, gx + bw / 2, gy + 14);
 }
 
 function drawMiniHPBar(x, y, hp, maxHp) {
