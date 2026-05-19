@@ -1,6 +1,6 @@
 const API_URL = window.location.origin;
 
-let currentUser = null;
+window.currentUser = null;
 
 function checkAuth() {
   const user = localStorage.getItem('pvz_user');

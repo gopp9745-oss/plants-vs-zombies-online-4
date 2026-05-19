@@ -3,17 +3,15 @@ let currentRole = null;
 
 function showScreen(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(screenId).classList.add('active');
-  
-  if (screenId === 'main-menu') {
-    updateUserInfo();
-  }
+  const el = document.getElementById(screenId);
+  if (el) el.classList.add('active');
+  if (screenId === 'main-menu') updateUserInfo();
 }
 
 function updateUserInfo() {
-  const userInfo = document.getElementById('user-info');
-  if (currentUser) {
-    userInfo.innerHTML = `
+  const el = document.getElementById('user-info');
+  if (currentUser && el) {
+    el.innerHTML = `
       <div class="user-card">
         <div class="user-avatar">${currentUser.nickname[0].toUpperCase()}</div>
         <div class="user-details">
@@ -36,28 +34,36 @@ async function showLeaderboard() {
 }
 
 async function loadLeaderboard() {
+  const tbody = document.getElementById('leaderboard-body');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="color:#888;padding:20px;">Загрузка...</td></tr>';
+
   try {
     const res = await fetch(`${window.location.origin}/api/leaderboard`);
     const data = await res.json();
-    
-    const tbody = document.getElementById('leaderboard-body');
+
+    if (!Array.isArray(data) || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="color:#888;padding:20px;">Пока нет игроков 🎮</td></tr>';
+      return;
+    }
+
     tbody.innerHTML = '';
-    
     data.forEach((player, index) => {
       const row = document.createElement('tr');
-      const isMe = currentUser && player.nickname === currentUser.nickname;
-      row.className = isMe ? 'my-row' : '';
+      const isMe = currentUser && String(player.nickname) === String(currentUser.nickname);
+      if (isMe) row.className = 'my-row';
       row.innerHTML = `
         <td class="rank">${getRankBadge(index + 1)}</td>
-        <td>${player.nickname}</td>
-        <td class="wins">${player.wins}</td>
-        <td class="losses">${player.losses}</td>
-        <td>${player.total_games}</td>
+        <td>${player.nickname || '???'}</td>
+        <td class="wins">${player.wins ?? 0}</td>
+        <td class="losses">${player.losses ?? 0}</td>
+        <td>${player.total_games ?? 0}</td>
       `;
       tbody.appendChild(row);
     });
   } catch (err) {
-    console.error('Failed to load leaderboard:', err);
+    console.error('Leaderboard error:', err);
+    tbody.innerHTML = '<tr><td colspan="5" style="color:#f44336;padding:20px;">Ошибка загрузки 😕</td></tr>';
   }
 }
 
@@ -71,7 +77,6 @@ function getRankBadge(rank) {
 function startMatchmaking(role) {
   currentRole = role;
   showScreen('waiting');
-  
   socket.emit('join_game', {
     userId: currentUser.id,
     role,
@@ -92,14 +97,7 @@ socket.on('match_found', ({ gameId, role, plantNickname, zombieNickname }) => {
   window.location.href = `/game.html?gameId=${gameId}`;
 });
 
-socket.on('waiting_for_opponent', () => {
-  console.log('Waiting for opponent...');
-});
+socket.on('waiting_for_opponent', () => console.log('Waiting...'));
+socket.on('wait_cancelled', () => showScreen('role-select'));
 
-socket.on('wait_cancelled', () => {
-  showScreen('role-select');
-});
-
-if (currentUser) {
-  updateUserInfo();
-}
+if (currentUser) updateUserInfo();
