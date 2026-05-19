@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Профиль — PvZ Online</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+  <style>
+    .profile-container { max-width: 700px; margin: 0 auto; padding: 30px 20px; }
+    .profile-header {
+      text-align: center;
+      padding: 30px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 30px;
+    }
+    .profile-avatar-large {
+      font-size: 80px;
+      display: block;
+      margin-bottom: 15px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .profile-avatar-large:hover { transform: scale(1.1); }
+    .profile-name {
+      font-family: 'Creepster', cursive;
+      font-size: 32px;
+      color: #FFD700;
+      margin-bottom: 5px;
+    }
+    .profile-clan {
+      font-size: 16px;
+      color: #CE93D8;
+      margin-bottom: 10px;
+    }
+    .profile-rank {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .profile-stats {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 20px;
+    }
+    .profile-stat {
+      text-align: center;
+    }
+    .profile-stat .num {
+      font-size: 28px;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+    .profile-stat .label {
+      font-size: 12px;
+      color: #888;
+    }
+    .section-title {
+      font-family: 'Creepster', cursive;
+      font-size: 22px;
+      color: #4CAF50;
+      margin-bottom: 15px;
+    }
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 8px;
+      margin-bottom: 30px;
+    }
+    .avatar-option {
+      font-size: 32px;
+      padding: 10px;
+      text-align: center;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .avatar-option:hover {
+      border-color: rgba(255,215,0,0.4);
+      transform: scale(1.1);
+    }
+    .avatar-option.selected {
+      border-color: #FFD700;
+      background: rgba(255,215,0,0.1);
+      box-shadow: 0 0 15px rgba(255,215,0,0.2);
+    }
+    .clan-input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    .clan-input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+    .clan-input:focus { border-color: #FFD700; }
+    .save-btn-profile {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(45deg, #2e7d32, #4CAF50);
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .save-btn-profile:hover { transform: scale(1.05); }
+    .back-link {
+      display: inline-block;
+      padding: 10px 20px;
+      color: #888;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover { color: #fff; }
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.9);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,215,0,0.3);
+      font-size: 14px;
+      z-index: 9999;
+    }
+    @media (max-width: 600px) {
+      .avatar-grid { grid-template-columns: repeat(6, 1fr); }
+      .profile-stats { gap: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-container">
+    <div class="profile-header">
+      <span class="profile-avatar-large" id="profile-avatar">🌱</span>
+      <div class="profile-name" id="profile-name">Игрок</div>
+      <div class="profile-clan" id="profile-clan"></div>
+      <div class="profile-rank" id="profile-rank"></div>
+      <div class="profile-stats">
+        <div class="profile-stat"><div class="num" id="stat-wins">0</div><div class="label">Победы</div></div>
+        <div class="profile-stat"><div class="num" id="stat-losses">0</div><div class="label">Проигрыши</div></div>
+        <div class="profile-stat"><div class="num" id="stat-coins">0</div><div class="label">Монеты</div></div>
+      </div>
+    </div>
+
+    <h2 class="section-title">🎭 Выбери аватар</h2>
+    <div class="avatar-grid" id="avatar-grid"></div>
+
+    <h2 class="section-title">🏰 Клан</h2>
+    <div class="clan-input-group">
+      <input type="text" class="clan-input" id="clan-input" placeholder="Название клана (2-20 символов)" maxlength="20" />
+      <button class="save-btn-profile" onclick="saveClan()">Сохранить</button>
+    </div>
+
+    <a href="/" class="back-link">← Назад в меню</a>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/ranks.js"></script>
+  <script src="js/profile-client.js"></script>
+</body>
+</html>

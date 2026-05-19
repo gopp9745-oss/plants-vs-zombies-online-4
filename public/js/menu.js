@@ -13,11 +13,13 @@ function updateUserInfo() {
   if (currentUser && el) {
     const rank = getRank(currentUser.wins || 0);
     const adminBadge = currentUser.is_admin ? '<span class="admin-badge">🛡️ Админ</span>' : '';
+    const avatar = currentUser.avatar || '🌱';
+    const clan = currentUser.clan ? ` <span class="clan-tag">🏰 ${currentUser.clan}</span>` : '';
     el.innerHTML = `
       <div class="user-card">
-        <div class="user-avatar">${currentUser.nickname[0].toUpperCase()}</div>
+        <div class="user-avatar">${avatar}</div>
         <div class="user-details">
-          <span class="user-nickname">${currentUser.nickname} <span class="rank-badge" style="color:${rank.color}">${rank.emoji} ${rank.name}</span> ${adminBadge}</span>
+          <span class="user-nickname">${currentUser.nickname}<span class="rank-badge" style="color:${rank.color}">${rank.emoji} ${rank.name}</span> ${clan} ${adminBadge}</span>
           <span class="user-stats">🏆 ${currentUser.wins} / 💀 ${currentUser.losses}</span>
         </div>
       </div>

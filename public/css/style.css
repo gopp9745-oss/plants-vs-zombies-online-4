@@ -257,6 +257,17 @@ body {
   border: 1px solid rgba(255,255,255,0.15);
 }
 
+.clan-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #CE93D8;
+  background: rgba(156,39,176,0.15);
+  border: 1px solid rgba(156,39,176,0.3);
+}
+
 .menu-btn.admin-btn {
   border-color: rgba(255,215,0,0.3);
   background: linear-gradient(145deg, rgba(255,215,0,0.1), rgba(184,134,11,0.05));
@@ -273,6 +284,15 @@ body {
 .menu-btn.shop-btn:hover {
   border-color: #FF9800;
   background: linear-gradient(145deg, rgba(255,152,0,0.15), rgba(230,120,0,0.1));
+}
+
+.menu-btn.profile-btn {
+  border-color: rgba(33,150,243,0.3);
+  background: linear-gradient(145deg, rgba(33,150,243,0.1), rgba(20,120,200,0.05));
+}
+.menu-btn.profile-btn:hover {
+  border-color: #2196F3;
+  background: linear-gradient(145deg, rgba(33,150,243,0.15), rgba(20,120,200,0.1));
 }
 
 /* SCREEN TITLES */

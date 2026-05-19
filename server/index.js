@@ -10,6 +10,7 @@ const leaderboardRoutes = require('./routes/leaderboard');
 const inventoryRoutes = require('./routes/inventory');
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
+const profileRoutes = require('./routes/profile');
 const gameManager = require('./game/gameManager');
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/shop', shopRoutes);
+app.use('/api/profile', profileRoutes);
 
 const readyStates = {};
 const GAME_DURATION = 300;

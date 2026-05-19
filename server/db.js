@@ -33,6 +33,8 @@ const userSchema = new mongoose.Schema({
   wins: { type: Number, default: 0 },
   losses: { type: Number, default: 0 },
   coins: { type: Number, default: 0 },
+  avatar: { type: String, default: '🌱' },
+  clan: { type: String, default: '' },
   is_admin: { type: Boolean, default: false },
   is_banned: { type: Boolean, default: false },
   unlocked_plants: { type: [Number], default: [1, 2, 3] }
@@ -74,14 +76,14 @@ async function mongoQuery(sql, params) {
   if (sql.includes('INSERT INTO users')) {
     const exists = await User.findOne({ nickname: params[0] });
     if (exists) return { rows: [] };
-    const user = await User.create({ nickname: params[0], password_hash: params[1], unlocked_plants: [1, 2, 3] });
-    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
+    const user = await User.create({ nickname: params[0], password_hash: params[1], unlocked_plants: [1, 2, 3], avatar: '🌱' });
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, avatar: user.avatar || '🌱', clan: user.clan || '', unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
   }
 
   if (sql.startsWith('SELECT') && sql.includes('users WHERE nickname')) {
     const user = await User.findOne({ nickname: params[0] });
     if (!user) { console.log('Mongo: user not found:', params[0]); return { rows: [] }; }
-    return { rows: [{ id: user._id.toString(), nickname: user.nickname, password_hash: user.password_hash, wins: user.wins, losses: user.losses, coins: user.coins || 0, is_admin: user.is_admin || false, is_banned: user.is_banned || false, unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, password_hash: user.password_hash, wins: user.wins, losses: user.losses, coins: user.coins || 0, avatar: user.avatar || '🌱', clan: user.clan || '', is_admin: user.is_admin || false, is_banned: user.is_banned || false, unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
   }
 
   if (sql.startsWith('SELECT') && sql.includes('id FROM users WHERE nickname')) {
@@ -174,10 +176,20 @@ async function mongoQuery(sql, params) {
     return { rows: [] };
   }
 
+  if (sql.includes('UPDATE users SET avatar')) {
+    await User.findByIdAndUpdate(params[1], { avatar: params[0] });
+    return { rows: [] };
+  }
+
+  if (sql.includes('UPDATE users SET clan')) {
+    await User.findByIdAndUpdate(params[1], { clan: params[0] });
+    return { rows: [] };
+  }
+
   if (sql.includes('SELECT') && sql.includes('FROM users WHERE id')) {
     const user = await User.findById(params[0]);
     if (!user) return { rows: [] };
-    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, is_admin: user.is_admin || false, is_banned: user.is_banned || false, unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, avatar: user.avatar || '🌱', clan: user.clan || '', is_admin: user.is_admin || false, is_banned: user.is_banned || false, unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
   }
 
   return { rows: [] };
@@ -190,9 +202,9 @@ function fileQuery(sql, params) {
 
   if (sql.includes('INSERT INTO users')) {
     const id = fileDb.users.length ? Math.max(...fileDb.users.map(u => u.id)) + 1 : 1;
-    fileDb.users.push({ id, nickname: params[0], password_hash: params[1], wins: 0, losses: 0, coins: 0, is_admin: false, is_banned: false, unlocked_plants: [1, 2, 3], created_at: new Date().toISOString() });
+    fileDb.users.push({ id, nickname: params[0], password_hash: params[1], wins: 0, losses: 0, coins: 0, avatar: '🌱', clan: '', is_admin: false, is_banned: false, unlocked_plants: [1, 2, 3], created_at: new Date().toISOString() });
     saveFileDb();
-    return { rows: [{ id, nickname: params[0], wins: 0, losses: 0, coins: 0, is_admin: false, is_banned: false, unlocked_plants: [1, 2, 3] }] };
+    return { rows: [{ id, nickname: params[0], wins: 0, losses: 0, coins: 0, avatar: '🌱', clan: '', is_admin: false, is_banned: false, unlocked_plants: [1, 2, 3] }] };
   }
 
   if (sql.includes('INSERT INTO loadouts')) {
@@ -223,6 +235,18 @@ function fileQuery(sql, params) {
   if (sql.includes('UPDATE users SET coins')) {
     const u = fileDb.users.find(u => u.id == params[1]);
     if (u) { u.coins = params[0]; saveFileDb(); }
+    return { rows: [] };
+  }
+
+  if (sql.includes('UPDATE users SET avatar')) {
+    const u = fileDb.users.find(u => u.id == params[1]);
+    if (u) { u.avatar = params[0]; saveFileDb(); }
+    return { rows: [] };
+  }
+
+  if (sql.includes('UPDATE users SET clan')) {
+    const u = fileDb.users.find(u => u.id == params[1]);
+    if (u) { u.clan = params[0]; saveFileDb(); }
     return { rows: [] };
   }
 

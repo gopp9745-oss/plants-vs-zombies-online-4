@@ -80,6 +80,8 @@ router.post('/login', async (req, res) => {
         wins: user.wins,
         losses: user.losses,
         coins: user.coins || 0,
+        avatar: user.avatar || '🌱',
+        clan: user.clan || '',
         is_admin: user.is_admin || false,
         is_banned: user.is_banned || false,
         unlocked_plants: user.unlocked_plants || [1, 2, 3]
@@ -104,6 +106,8 @@ router.post('/refresh', async (req, res) => {
       wins: u.wins,
       losses: u.losses,
       coins: u.coins || 0,
+      avatar: u.avatar || '🌱',
+      clan: u.clan || '',
       is_admin: u.is_admin || false,
       is_banned: u.is_banned || false,
       unlocked_plants: u.unlocked_plants || [1, 2, 3]
