@@ -248,12 +248,13 @@ function gameLoop() {
     if (state.gameStartTime) {
       const elapsed = (now - state.gameStartTime) / 1000;
       state.timeRemaining = Math.max(0, GAME_DURATION - elapsed);
+      changed = true;
       if (state.timeRemaining <= 0 && state.plantHP > 0) {
         state.gameOver = true;
         state.winner = 'plant';
         safeEndGame(gameId, 'plant');
         io.to(gameId).emit('game_over', { winner: 'plant' });
-        changed = false;
+        return;
       }
     }
 

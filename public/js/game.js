@@ -21,7 +21,9 @@ let selectedAction = null;
 let itemsList = [];
 let sunInterval = null;
 let zombieSunInterval = null;
+let timerInterval = null;
 let readySent = false;
+const GAME_DURATION = 300;
 
 const plantEmojis = ['🌻', '🌱', '🥜', '🍒', '❄️', '🔁', '💣', '👯'];
 const zombieEmojis = ['🧟', '🧟‍♂️', '🪖', '🏃', '👹', '💃', '🏈', '🎣'];
@@ -177,6 +179,7 @@ socket.on('game_start', ({ state }) => {
   gameState = state;
   updateSunDisplay();
   updateTimerDisplay();
+  startLocalTimer();
   render();
 });
 
@@ -190,6 +193,7 @@ socket.on('game_state', (state) => {
 socket.on('game_over', ({ winner }) => {
   clearInterval(sunInterval);
   clearInterval(zombieSunInterval);
+  clearInterval(timerInterval);
   const overlay = document.getElementById('overlay');
   const title = document.getElementById('overlay-title');
   const message = document.getElementById('overlay-message');
@@ -212,11 +216,18 @@ function updateSunDisplay() {
 }
 
 function updateTimerDisplay() {
-  if (!gameState || gameState.timeRemaining === undefined) return;
-  const sec = Math.ceil(gameState.timeRemaining);
+  if (!gameState || !gameState.gameStartTime) return;
+  const elapsed = (Date.now() - gameState.gameStartTime) / 1000;
+  const remaining = Math.max(0, GAME_DURATION - elapsed);
+  const sec = Math.ceil(remaining);
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   document.getElementById('timer-display').textContent = `⏱️ ${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function startLocalTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimerDisplay, 1000);
 }
 
 function render() {
