@@ -25,6 +25,15 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/inventory', inventoryRoutes);
 
 const readyStates = {};
+const GAME_DURATION = 300; // 5 minutes in seconds
+
+function safeEndGame(gameId, winner) {
+  try {
+    gameManager.endGame(gameId, winner, { query });
+  } catch (e) {
+    console.error('endGame error:', e.message);
+  }
+}
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
@@ -39,14 +48,12 @@ io.on('connection', (socket) => {
     if (gameId) {
       const game = gameManager.getGame(gameId);
 
-      // join both sockets to room
       io.to(game.plantSocketId).socketsJoin(gameId);
       io.to(game.zombieSocketId).socketsJoin(gameId);
       socket.join(gameId);
 
       readyStates[gameId] = { plant: false, zombie: false };
 
-      // send correct role to each player
       io.to(game.plantSocketId).emit('match_found', {
         gameId, role: 'plant',
         plantNickname: game.plantNickname,
@@ -62,7 +69,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  /* New socket from game.html reconnects to existing game */
   socket.on('join_game_room', ({ gameId, role }) => {
     const game = gameManager.getGame(gameId);
     if (!game) return;
@@ -70,10 +76,8 @@ io.on('connection', (socket) => {
     socket.join(gameId);
     socket.emit('joined_game_room', { gameId, role });
 
-    // check if both players reconnected
     const room = io.sockets.adapter.rooms.get(gameId);
     if (room && room.size >= 2) {
-      // both are in the room, send game start or ready check
       io.to(gameId).emit('both_connected');
     }
   });
@@ -83,6 +87,7 @@ io.on('connection', (socket) => {
       readyStates[gameId][role] = true;
       if (readyStates[gameId].plant && readyStates[gameId].zombie) {
         const game = gameManager.getGame(gameId);
+        game.state.gameStartTime = Date.now();
         io.to(gameId).emit('game_start', {
           state: game.state,
           plantNickname: game.plantNickname,
@@ -143,7 +148,7 @@ io.on('connection', (socket) => {
         const winner = data.role === 'plant' ? 'zombie' : 'plant';
         state.gameOver = true;
         state.winner = winner;
-        gameManager.endGame(gameId, winner, { query });
+        safeEndGame(gameId, winner);
         io.to(gameId).emit('game_over', { winner });
         return;
     }
@@ -151,12 +156,11 @@ io.on('connection', (socket) => {
     gameManager.updateGame(gameId, state);
     io.to(gameId).emit('game_state', state);
 
-    if (state.plantHP <= 0 || state.zombieHP <= 0) {
-      const winner = state.plantHP <= 0 ? 'zombie' : 'plant';
+    if (state.plantHP <= 0 && !state.gameOver) {
       state.gameOver = true;
-      state.winner = winner;
-      gameManager.endGame(gameId, winner, { query });
-      io.to(gameId).emit('game_over', { winner });
+      state.winner = 'zombie';
+      safeEndGame(gameId, 'zombie');
+      io.to(gameId).emit('game_over', { winner: 'zombie' });
     }
   });
 
@@ -210,7 +214,7 @@ function gameLoop() {
       for (let col = 0; col < 10; col++) {
         const cell = state.grid[row][col];
         if (!cell) continue;
-        if (cell.type === 1 || cell.type === 4) continue; // sunflower & cherry bomb don't shoot
+        if (cell.type === 1 || cell.type === 4) continue;
         const hasZombie = state.zombies.some(z => z.row === row);
         if (!hasZombie) continue;
         const cooldown = cell.type === 6 ? SHOT_COOLDOWN / 2 : SHOT_COOLDOWN;
@@ -236,30 +240,33 @@ function gameLoop() {
           break;
         }
       }
-      if (hit) continue;
-      if (p.col >= 10) {
-        state.zombieHP -= 5;
-        if (state.zombieHP < 0) state.zombieHP = 0;
-      } else {
-        aliveProjectiles.push(p);
-      }
+      if (!hit && p.col < 10) aliveProjectiles.push(p);
     }
     state.projectiles = aliveProjectiles;
 
-    // 5. Check win conditions
-    if (state.plantHP <= 0) {
-      state.gameOver = true; state.winner = 'zombie';
-      gameManager.endGame(gameId, 'zombie', { query });
+    // 5. Time-based win check
+    if (state.gameStartTime) {
+      const elapsed = (now - state.gameStartTime) / 1000;
+      state.timeRemaining = Math.max(0, GAME_DURATION - elapsed);
+      if (state.timeRemaining <= 0 && state.plantHP > 0) {
+        state.gameOver = true;
+        state.winner = 'plant';
+        safeEndGame(gameId, 'plant');
+        io.to(gameId).emit('game_over', { winner: 'plant' });
+        changed = false;
+      }
+    }
+
+    // 6. Plant HP win check
+    if (state.plantHP <= 0 && !state.gameOver) {
+      state.gameOver = true;
+      state.winner = 'zombie';
+      safeEndGame(gameId, 'zombie');
       io.to(gameId).emit('game_over', { winner: 'zombie' });
-      changed = false;
-    } else if (state.zombieHP <= 0) {
-      state.gameOver = true; state.winner = 'plant';
-      gameManager.endGame(gameId, 'plant', { query });
-      io.to(gameId).emit('game_over', { winner: 'plant' });
       changed = false;
     }
 
-    // 6. Broadcast
+    // 7. Broadcast
     if (changed) {
       gameManager.updateGame(gameId, state);
       io.to(gameId).emit('game_state', state);

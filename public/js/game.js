@@ -176,12 +176,14 @@ function startGameLoops() {
 socket.on('game_start', ({ state }) => {
   gameState = state;
   updateSunDisplay();
+  updateTimerDisplay();
   render();
 });
 
 socket.on('game_state', (state) => {
   gameState = state;
   updateSunDisplay();
+  updateTimerDisplay();
   render();
 });
 
@@ -207,6 +209,14 @@ socket.on('game_over', ({ winner }) => {
 function updateSunDisplay() {
   if (!gameState) return;
   document.getElementById('sun-count').textContent = role === 'plant' ? gameState.plantSun : gameState.zombieSun;
+}
+
+function updateTimerDisplay() {
+  if (!gameState || gameState.timeRemaining === undefined) return;
+  const sec = Math.ceil(gameState.timeRemaining);
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  document.getElementById('timer-display').textContent = `⏱️ ${m}:${s.toString().padStart(2, '0')}`;
 }
 
 function render() {
@@ -363,14 +373,6 @@ function drawHPBars() {
   ctx.font = 'bold 11px Arial';
   ctx.textAlign = 'center';
   ctx.fillText(`🏠 Дом: ${Math.round(gameState.plantHP)}%`, gx + bw / 2, gy + 14);
-
-  const rw = canvas.width - 10 - bw;
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(rw, gy, bw, bh);
-  ctx.fillStyle = '#9C27B0';
-  ctx.fillRect(rw, gy, bw * (gameState.zombieHP / 100), bh);
-  ctx.fillStyle = '#fff';
-  ctx.fillText(`💀 База: ${Math.round(gameState.zombieHP)}%`, rw + bw / 2, gy + 14);
 }
 
 function drawMiniHPBar(x, y, hp, maxHp) {
@@ -388,6 +390,9 @@ function surrender() {
 }
 
 function returnToMenu() {
+  clearInterval(sunInterval);
+  clearInterval(zombieSunInterval);
+  socket.disconnect();
   sessionStorage.removeItem('gameRole');
   sessionStorage.removeItem('plantNickname');
   sessionStorage.removeItem('zombieNickname');

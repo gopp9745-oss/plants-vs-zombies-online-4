@@ -28,6 +28,16 @@
 
 .sun-icon { font-size: 24px; }
 
+#timer-display {
+  font-size: 18px;
+  font-weight: bold;
+  color: #FFD700;
+  background: rgba(0,0,0,0.5);
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,215,0,0.3);
+}
+
 #role-indicator {
   padding: 6px 18px;
   border-radius: 10px;

@@ -56,7 +56,7 @@ class GameManager {
       explosions: [],
       sunDrops: [],
       plantHP: 100,
-      zombieHP: 100,
+      gameStartTime: null,
       gameOver: false,
       winner: null
     };

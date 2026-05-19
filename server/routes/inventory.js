@@ -14,14 +14,14 @@ const PLANTS = [
 ];
 
 const ZOMBIES = [
-  { id: 1, name: 'Обычный зомби', type: 'basic', hp: 100, speed: 1, desc: 'Стандартный зомби' },
-  { id: 2, name: 'Зомби-конус', type: 'cone', hp: 200, speed: 1, desc: 'Зомби с конусом' },
-  { id: 3, name: 'Зомби-ведро', type: 'bucket', hp: 350, speed: 1, desc: 'Зомби с ведром' },
-  { id: 4, name: 'Бегущий зомби', type: 'runner', hp: 80, speed: 2, desc: 'Быстрый зомби' },
-  { id: 5, name: 'Гигант-зомби', type: 'giant', hp: 500, speed: 0.5, desc: 'Огромный зомби' },
-  { id: 6, name: 'Зомби-танцор', type: 'dancer', hp: 150, speed: 1.2, desc: 'Призывает других' },
-  { id: 7, name: 'Зомби-футболист', type: 'football', hp: 300, speed: 1.5, desc: 'Быстрый и крепкий' },
-  { id: 8, name: 'Зомби-рыбак', type: 'fisher', hp: 120, speed: 1, desc: 'Вытаскивает растения' }
+  { id: 1, name: 'Обычный зомби', type: 'basic', hp: 100, speed: 1, cost: 50, desc: 'Стандартный зомби' },
+  { id: 2, name: 'Зомби-конус', type: 'cone', hp: 200, speed: 1, cost: 75, desc: 'Зомби с конусом' },
+  { id: 3, name: 'Зомби-ведро', type: 'bucket', hp: 350, speed: 1, cost: 100, desc: 'Зомби с ведром' },
+  { id: 4, name: 'Бегущий зомби', type: 'runner', hp: 80, speed: 2, cost: 60, desc: 'Быстрый зомби' },
+  { id: 5, name: 'Гигант-зомби', type: 'giant', hp: 500, speed: 0.5, cost: 150, desc: 'Огромный зомби' },
+  { id: 6, name: 'Зомби-танцор', type: 'dancer', hp: 150, speed: 1.2, cost: 125, desc: 'Призывает других' },
+  { id: 7, name: 'Зомби-футболист', type: 'football', hp: 300, speed: 1.5, cost: 120, desc: 'Быстрый и крепкий' },
+  { id: 8, name: 'Зомби-рыбак', type: 'fisher', hp: 120, speed: 1, cost: 90, desc: 'Вытаскивает растения' }
 ];
 
 router.get('/items', (req, res) => {
