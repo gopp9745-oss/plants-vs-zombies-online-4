@@ -11,16 +11,19 @@ function showScreen(screenId) {
 function updateUserInfo() {
   const el = document.getElementById('user-info');
   if (currentUser && el) {
+    const adminBadge = currentUser.is_admin ? '<span class="admin-badge">🛡️ Админ</span>' : '';
     el.innerHTML = `
       <div class="user-card">
         <div class="user-avatar">${currentUser.nickname[0].toUpperCase()}</div>
         <div class="user-details">
-          <span class="user-nickname">${currentUser.nickname}</span>
+          <span class="user-nickname">${currentUser.nickname} ${adminBadge}</span>
           <span class="user-stats">🏆 ${currentUser.wins} / 💀 ${currentUser.losses}</span>
         </div>
       </div>
     `;
   }
+  const adminBtn = document.getElementById('admin-menu-btn');
+  if (adminBtn) adminBtn.style.display = currentUser && currentUser.is_admin ? 'block' : 'none';
 }
 
 async function showInventory() {
@@ -101,3 +104,9 @@ socket.on('waiting_for_opponent', () => console.log('Waiting...'));
 socket.on('wait_cancelled', () => showScreen('role-select'));
 
 if (currentUser) updateUserInfo();
+
+function openAdminPanel() {
+  if (currentUser && currentUser.is_admin) {
+    window.location.href = '/admin.html';
+  }
+}

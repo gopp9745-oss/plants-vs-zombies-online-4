@@ -1,7 +1,15 @@
 const API = window.location.origin + '/api/admin';
 let adminToken = localStorage.getItem('adminToken');
 
-if (adminToken) {
+const savedUser = localStorage.getItem('pvz_user');
+const user = savedUser ? JSON.parse(savedUser) : null;
+
+if (user && user.is_admin) {
+  adminToken = 'admin_auto';
+  localStorage.setItem('adminToken', adminToken);
+  showDashboard();
+  loadUsers();
+} else if (adminToken) {
   showDashboard();
   loadUsers();
 }

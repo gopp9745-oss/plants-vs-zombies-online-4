@@ -33,7 +33,7 @@ router.post('/register', async (req, res) => {
     await query('INSERT INTO loadouts (user_id, role) VALUES ($1, $2)', [user.id, 'zombie']);
 
     console.log('[REGISTER] success, user id:', user.id);
-    res.json({ message: 'Registered successfully', user });
+    res.json({ message: 'Registered successfully', user: { ...user, is_admin: false } });
   } catch (err) {
     console.error('[REGISTER] error:', err.message);
     res.status(500).json({ error: 'Registration failed' });
@@ -73,7 +73,8 @@ router.post('/login', async (req, res) => {
         id: user.id,
         nickname: user.nickname,
         wins: user.wins,
-        losses: user.losses
+        losses: user.losses,
+        is_admin: user.is_admin || false
       }
     });
   } catch (err) {
