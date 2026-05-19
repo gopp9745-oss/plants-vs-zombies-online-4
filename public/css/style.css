@@ -247,6 +247,16 @@ body {
   border: 1px solid rgba(255,215,0,0.4);
 }
 
+.rank-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: bold;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
 .menu-btn.admin-btn {
   border-color: rgba(255,215,0,0.3);
   background: linear-gradient(145deg, rgba(255,215,0,0.1), rgba(184,134,11,0.05));
