@@ -156,6 +156,11 @@ async function mongoQuery(sql, params) {
     return { rows: [{ count }] };
   }
 
+  if (sql.includes('UPDATE users SET password_hash')) {
+    await User.findByIdAndUpdate(params[1], { password_hash: params[0] });
+    return { rows: [] };
+  }
+
   return { rows: [] };
 }
 
@@ -225,6 +230,12 @@ function fileQuery(sql, params) {
 
   if (sql.includes('SELECT COUNT(*)')) {
     return { rows: [{ count: fileDb.users.length }] };
+  }
+
+  if (sql.includes('UPDATE users SET password_hash')) {
+    const u = fileDb.users.find(u => u.id == params[1]);
+    if (u) { u.password_hash = params[0]; saveFileDb(); }
+    return { rows: [] };
   }
 
   return { rows: [] };

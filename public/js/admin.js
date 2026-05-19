@@ -87,6 +87,7 @@ async function loadUsers() {
       if (!u.is_admin) actions += `<button class="action-btn btn-admin" onclick="makeAdmin('${u.id}')">Админ</button>`;
       actions += `<button class="action-btn btn-kick" onclick="kickUser('${u.id}')">Кик</button>`;
       actions += `<button class="action-btn btn-reset" onclick="resetStats('${u.id}')">Сброс</button>`;
+      actions += `<button class="action-btn btn-admin" onclick="resetPassword('${u.id}')">Пароль</button>`;
       actions += `<button class="action-btn btn-delete" onclick="deleteUser('${u.id}')">Удалить</button>`;
 
       tr.innerHTML = `
@@ -176,4 +177,12 @@ function kickGame(gameId) {
   if (!confirm('Закрыть эту игру?')) return;
   adminSocket.emit('admin_end_game', { gameId, winner: 'plant', adminToken });
   loadGames();
+}
+
+async function resetPassword(id) {
+  const res = await fetch(API + '/users/' + id + '/reset-password', { method: 'POST', headers: headers() });
+  const data = await res.json();
+  if (data.newPassword) {
+    alert('Новый пароль: ' + data.newPassword);
+  }
 }

@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const { query } = require('../db');
 const router = express.Router();
 
@@ -78,6 +79,17 @@ router.delete('/users/:id', authMiddleware, async (req, res) => {
   try {
     await query('DELETE FROM users WHERE id = $1', [req.params.id]);
     res.json({ message: 'User deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/users/:id/reset-password', authMiddleware, async (req, res) => {
+  try {
+    const newPassword = Math.random().toString(36).slice(-8);
+    const hash = await bcrypt.hash(newPassword, 10);
+    await query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.params.id]);
+    res.json({ message: 'Password reset', newPassword });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
