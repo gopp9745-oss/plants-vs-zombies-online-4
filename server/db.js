@@ -78,7 +78,7 @@ async function mongoQuery(sql, params) {
   if (sql.startsWith('SELECT') && sql.includes('users WHERE nickname')) {
     const user = await User.findOne({ nickname: params[0] });
     if (!user) { console.log('Mongo: user not found:', params[0]); return { rows: [] }; }
-    return { rows: [{ id: user._id.toString(), nickname: user.nickname, password_hash: user.password_hash, wins: user.wins, losses: user.losses }] };
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, password_hash: user.password_hash, wins: user.wins, losses: user.losses, is_admin: user.is_admin || false, is_banned: user.is_banned || false }] };
   }
 
   if (sql.startsWith('SELECT') && sql.includes('id FROM users WHERE nickname')) {
