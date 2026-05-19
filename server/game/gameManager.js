@@ -6,57 +6,57 @@ class GameManager {
     this.gameCounter = 0;
   }
 
-  findMatch(userId, role, loadout, io) {
+  findMatch(userId, role, loadout, nickname, socketId) {
     if (role === 'plant') {
       if (this.waitingZombies.length > 0) {
         const zombie = this.waitingZombies.shift();
-        return this.startGame(zombie.userId, userId, zombie.loadout, loadout, io);
+        return this.startGame(zombie, { userId, role, loadout, nickname, socketId });
       } else {
-        this.waitingPlants.push({ userId, loadout });
+        this.waitingPlants.push({ userId, role, loadout, nickname, socketId });
         return null;
       }
     } else {
       if (this.waitingPlants.length > 0) {
         const plant = this.waitingPlants.shift();
-        return this.startGame(userId, plant.userId, loadout, plant.loadout, io);
+        return this.startGame({ userId, role, loadout, nickname, socketId }, plant);
       } else {
-        this.waitingZombies.push({ userId, loadout });
+        this.waitingZombies.push({ userId, role, loadout, nickname, socketId });
         return null;
       }
     }
   }
 
-  startGame(zombieId, plantId, zombieLoadout, plantLoadout, io) {
+  startGame(zombie, plant) {
     const gameId = `game_${++this.gameCounter}`;
     this.games[gameId] = {
       id: gameId,
-      plantId,
-      zombieId,
-      plantLoadout,
-      zombieLoadout,
-      state: this.createInitialState(plantLoadout, zombieLoadout),
+      plantId: plant.userId,
+      zombieId: zombie.userId,
+      plantNickname: plant.nickname,
+      zombieNickname: zombie.nickname,
+      plantSocketId: plant.socketId,
+      zombieSocketId: zombie.socketId,
+      plantLoadout: plant.loadout,
+      zombieLoadout: zombie.loadout,
+      state: this.createInitialState(),
       started: Date.now(),
       finished: false
     };
-    
     return gameId;
   }
 
-  createInitialState(plantLoadout, zombieLoadout) {
+  createInitialState() {
     const grid = Array(5).fill(null).map(() => Array(9).fill(null));
     return {
       grid,
       plantSun: 150,
       zombieSun: 0,
-      plantSelectedPlant: null,
-      zombieSelectedZombie: null,
       zombies: [],
       projectiles: [],
       explosions: [],
       sunDrops: [],
       plantHP: 100,
       zombieHP: 100,
-      turn: 'plant',
       gameOver: false,
       winner: null
     };

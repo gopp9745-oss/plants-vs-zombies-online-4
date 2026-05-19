@@ -5,66 +5,113 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Plants vs Zombies Online</title>
   <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="app">
     <div id="main-menu" class="screen active">
-      <h1 class="game-title">🌻 Plants vs Zombies 🧟</h1>
-      <h2 class="subtitle">Online</h2>
+      <div class="menu-hero">
+        <div class="hero-left">
+          <div class="hero-char plant-big">🌻</div>
+          <div class="hero-char plant-small">🌱</div>
+          <div class="hero-char plant-small">🥜</div>
+        </div>
+        <div class="hero-center">
+          <h1 class="game-title">PLANTS<br><span class="vs-text">VS</span><br>ZOMBIES</h1>
+          <p class="subtitle">ONLINE BATTLE</p>
+        </div>
+        <div class="hero-right-side">
+          <div class="hero-char zombie-big">🧟</div>
+          <div class="hero-char zombie-small">🧟‍♂️</div>
+          <div class="hero-char zombie-small">👹</div>
+        </div>
+      </div>
+
       <div class="menu-buttons">
-        <button class="menu-btn" id="btn-play" onclick="showScreen('role-select')">▶ Играть</button>
-        <button class="menu-btn" id="btn-inventory" onclick="showInventory()">🎒 Инвентарь</button>
-        <button class="menu-btn" id="btn-leaderboard" onclick="showLeaderboard()">🏆 Лидерборд</button>
-        <button class="menu-btn" id="btn-logout" onclick="logout()">🚪 Выйти</button>
+        <button class="menu-btn primary" onclick="showScreen('role-select')">
+          <span class="btn-icon">⚔️</span>
+          <span class="btn-text">ИГРАТЬ</span>
+          <span class="btn-sub">Найти противника</span>
+        </button>
+        <button class="menu-btn" onclick="showInventory()">
+          <span class="btn-icon">🎒</span>
+          <span class="btn-text">ИНВЕНТАРЬ</span>
+          <span class="btn-sub">Выбрать отряд</span>
+        </button>
+        <button class="menu-btn" onclick="showLeaderboard()">
+          <span class="btn-icon">🏆</span>
+          <span class="btn-text">ЛИДЕРБОРД</span>
+          <span class="btn-sub">Таблица чемпионов</span>
+        </button>
+        <button class="menu-btn logout" onclick="logout()">
+          <span class="btn-icon">🚪</span>
+          <span class="btn-text">ВЫЙТИ</span>
+          <span class="btn-sub">Сменить аккаунт</span>
+        </button>
       </div>
       <div id="user-info" class="user-info"></div>
     </div>
 
     <div id="role-select" class="screen">
-      <h2>Выберите сторону</h2>
+      <h2 class="screen-title">ВЫБЕРИТЕ СТОРОНУ</h2>
+      <p class="screen-desc">Кем вы хотите играть?</p>
       <div class="role-buttons">
-        <button class="role-btn plant-btn" onclick="startMatchmaking('plant')">🌻 Растение</button>
-        <button class="role-btn zombie-btn" onclick="startMatchmaking('zombie')">🧟 Зомби</button>
+        <button class="role-btn plant-btn" onclick="startMatchmaking('plant')">
+          <div class="role-emoji">🌻</div>
+          <div class="role-name">Растение</div>
+          <div class="role-desc">Защитите свой дом!</div>
+        </button>
+        <button class="role-btn zombie-btn" onclick="startMatchmaking('zombie')">
+          <div class="role-emoji">🧟</div>
+          <div class="role-name">Зомби</div>
+          <div class="role-desc">Захватите дом!</div>
+        </button>
       </div>
-      <button class="back-btn" onclick="showScreen('main-menu')">← Назад</button>
+      <button class="back-btn" onclick="showScreen('main-menu')">← НАЗАД</button>
     </div>
 
     <div id="waiting" class="screen">
-      <h2>⏳ Поиск противника...</h2>
+      <div class="waiting-animation">
+        <div class="waiting-char plant-wait">🌻</div>
+        <div class="waiting-vs">⚔️</div>
+        <div class="waiting-char zombie-wait">🧟</div>
+      </div>
+      <h2 class="waiting-title">ПОИСК ПРОТИВНИКА...</h2>
       <div class="spinner"></div>
-      <button class="cancel-btn" onclick="cancelMatchmaking()">Отменить</button>
+      <p class="waiting-hint">Ожидание второго игрока</p>
+      <button class="cancel-btn" onclick="cancelMatchmaking()">ОТМЕНИТЬ</button>
     </div>
 
     <div id="inventory" class="screen">
-      <h2>🎒 Инвентарь</h2>
+      <h2 class="screen-title">ИНВЕНТАРЬ</h2>
       <div class="role-tabs">
         <button class="tab-btn active" onclick="switchInventoryTab('plant')">🌻 Растения</button>
         <button class="tab-btn" onclick="switchInventoryTab('zombie')">🧟 Зомби</button>
       </div>
       <div id="items-grid" class="items-grid"></div>
       <div class="loadout-section">
-        <h3>Загрузить в слоты (6 слотов)</h3>
+        <h3>Ваш отряд (6 слотов)</h3>
         <div id="loadout-slots" class="loadout-slots"></div>
-        <button class="save-btn" onclick="saveLoadout()">💾 Сохранить</button>
+        <button class="save-btn" onclick="saveLoadout()">💾 СОХРАНИТЬ</button>
       </div>
-      <button class="back-btn" onclick="showScreen('main-menu')">← Назад</button>
+      <button class="back-btn" onclick="showScreen('main-menu')">← НАЗАД</button>
     </div>
 
     <div id="leaderboard" class="screen">
-      <h2>🏆 Лидерборд</h2>
+      <h2 class="screen-title">ЛИДЕРБОРД</h2>
       <table id="leaderboard-table">
         <thead>
           <tr>
             <th>#</th>
-            <th>Никнейм</th>
-            <th>Победы</th>
-            <th>Поражения</th>
-            <th>Всего игр</th>
+            <th>Игрок</th>
+            <th>🏆 Победы</th>
+            <th>💀 Поражения</th>
+            <th>Всего</th>
           </tr>
         </thead>
         <tbody id="leaderboard-body"></tbody>
       </table>
-      <button class="back-btn" onclick="showScreen('main-menu')">← Назад</button>
+      <button class="back-btn" onclick="showScreen('main-menu')">← НАЗАД</button>
     </div>
   </div>
 

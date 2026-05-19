@@ -24,25 +24,52 @@ app.use('/api/auth', authRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/inventory', inventoryRoutes);
 
+/* Store ready states for both players in a game */
+const readyStates = {};
+
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
   
   let currentUserId = null;
-  let currentRole = null;
   let currentGameId = null;
 
-  socket.on('join_game', async ({ userId, role, loadout }) => {
+  socket.on('join_game', async ({ userId, role, loadout, nickname }) => {
     currentUserId = userId;
-    currentRole = role;
     
-    const gameId = gameManager.findMatch(userId, role, loadout, io);
+    const gameId = gameManager.findMatch(userId, role, loadout, nickname, socket.id);
     
     if (gameId) {
       currentGameId = gameId;
+      const game = gameManager.getGame(gameId);
+      
       socket.join(gameId);
-      io.to(gameId).emit('match_found', { gameId });
+      io.to(game.plantSocketId).socketsJoin(gameId);
+      io.to(game.zombieSocketId).socketsJoin(gameId);
+      
+      readyStates[gameId] = { plant: false, zombie: false };
+      
+      io.to(gameId).emit('match_found', {
+        gameId,
+        role: socket.id === game.plantSocketId ? 'plant' : 'zombie',
+        plantNickname: game.plantNickname,
+        zombieNickname: game.zombieNickname
+      });
     } else {
       socket.emit('waiting_for_opponent');
+    }
+  });
+
+  socket.on('player_ready', ({ gameId, role }) => {
+    if (readyStates[gameId]) {
+      readyStates[gameId][role] = true;
+      if (readyStates[gameId].plant && readyStates[gameId].zombie) {
+        const game = gameManager.getGame(gameId);
+        io.to(gameId).emit('game_start', {
+          state: game.state,
+          plantNickname: game.plantNickname,
+          zombieNickname: game.zombieNickname
+        });
+      }
     }
   });
 
@@ -92,6 +119,14 @@ io.on('connection', (socket) => {
       case 'zombie_earn_sun':
         state.zombieSun += data.amount;
         break;
+
+      case 'surrender':
+        const winner = game.plantSocketId === socket.id ? 'zombie' : 'plant';
+        state.gameOver = true;
+        state.winner = winner;
+        gameManager.endGame(gameId, winner, { query });
+        io.to(gameId).emit('game_over', { winner });
+        return;
     }
     
     gameManager.updateGame(gameId, state);

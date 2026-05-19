@@ -12,10 +12,11 @@
     <div id="top-bar">
       <div class="resource">
         <span class="sun-icon">☀️</span>
-        <span id="sun-count">150</span>
+        <span id="sun-count">0</span>
       </div>
       <div id="role-indicator"></div>
-      <button id="surrender-btn" onclick="surrender()">Сдаться</button>
+      <div id="opponent-info" class="opponent-info"></div>
+      <button id="surrender-btn" onclick="surrender()">🏳️ Сдаться</button>
     </div>
 
     <div id="game-board">
@@ -29,8 +30,8 @@
     <div id="overlay" class="overlay hidden">
       <div id="overlay-content">
         <h2 id="overlay-title"></h2>
-        <p id="overlay-message"></p>
-        <button id="overlay-btn" onclick="returnToMenu()">В меню</button>
+        <div id="overlay-message"></div>
+        <button id="overlay-btn"></button>
       </div>
     </div>
   </div>

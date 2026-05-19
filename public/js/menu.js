@@ -14,8 +14,13 @@ function updateUserInfo() {
   const userInfo = document.getElementById('user-info');
   if (currentUser) {
     userInfo.innerHTML = `
-      <h3>👤 ${currentUser.nickname}</h3>
-      <p>Победы: ${currentUser.wins} | Поражения: ${currentUser.losses}</p>
+      <div class="user-card">
+        <div class="user-avatar">${currentUser.nickname[0].toUpperCase()}</div>
+        <div class="user-details">
+          <span class="user-nickname">${currentUser.nickname}</span>
+          <span class="user-stats">🏆 ${currentUser.wins} / 💀 ${currentUser.losses}</span>
+        </div>
+      </div>
     `;
   }
 }
@@ -40,11 +45,13 @@ async function loadLeaderboard() {
     
     data.forEach((player, index) => {
       const row = document.createElement('tr');
+      const isMe = currentUser && player.nickname === currentUser.nickname;
+      row.className = isMe ? 'my-row' : '';
       row.innerHTML = `
-        <td>${index + 1}</td>
+        <td class="rank">${getRankBadge(index + 1)}</td>
         <td>${player.nickname}</td>
-        <td>${player.wins}</td>
-        <td>${player.losses}</td>
+        <td class="wins">${player.wins}</td>
+        <td class="losses">${player.losses}</td>
         <td>${player.total_games}</td>
       `;
       tbody.appendChild(row);
@@ -54,17 +61,23 @@ async function loadLeaderboard() {
   }
 }
 
+function getRankBadge(rank) {
+  if (rank === 1) return '🥇';
+  if (rank === 2) return '🥈';
+  if (rank === 3) return '🥉';
+  return `#${rank}`;
+}
+
 function startMatchmaking(role) {
   currentRole = role;
-  const loadout = window.currentLoadout || [];
+  showScreen('waiting');
   
   socket.emit('join_game', {
     userId: currentUser.id,
     role,
-    loadout
+    loadout: window.currentLoadout || [],
+    nickname: currentUser.nickname
   });
-  
-  showScreen('waiting');
 }
 
 function cancelMatchmaking() {
@@ -72,8 +85,11 @@ function cancelMatchmaking() {
   showScreen('role-select');
 }
 
-socket.on('match_found', ({ gameId }) => {
-  window.location.href = `/game.html?gameId=${gameId}&role=${currentRole}`;
+socket.on('match_found', ({ gameId, role, plantNickname, zombieNickname }) => {
+  sessionStorage.setItem('gameRole', role);
+  sessionStorage.setItem('plantNickname', plantNickname);
+  sessionStorage.setItem('zombieNickname', zombieNickname);
+  window.location.href = `/game.html?gameId=${gameId}`;
 });
 
 socket.on('waiting_for_opponent', () => {
