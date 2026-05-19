@@ -30,7 +30,9 @@ const userSchema = new mongoose.Schema({
   nickname: { type: String, unique: true, required: true },
   password_hash: { type: String, required: true },
   wins: { type: Number, default: 0 },
-  losses: { type: Number, default: 0 }
+  losses: { type: Number, default: 0 },
+  is_admin: { type: Boolean, default: false },
+  is_banned: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const loadoutSchema = new mongoose.Schema({
@@ -118,6 +120,36 @@ async function mongoQuery(sql, params) {
     return { rows: [] };
   }
 
+  if (sql.includes('SELECT') && sql.includes('FROM users') && sql.includes('ORDER BY')) {
+    const users = await User.find().sort({ createdAt: -1 }).lean();
+    return { rows: users.map(u => ({ id: u._id.toString(), nickname: u.nickname, wins: u.wins, losses: u.losses, is_admin: u.is_admin || false, is_banned: u.is_banned || false, created_at: u.createdAt })) };
+  }
+
+  if (sql.includes('UPDATE users SET is_admin')) {
+    await User.findByIdAndUpdate(params[0], { is_admin: params[1] === 1 });
+    return { rows: [] };
+  }
+
+  if (sql.includes('UPDATE users SET is_banned')) {
+    await User.findByIdAndUpdate(params[0], { is_banned: params[1] === 1 });
+    return { rows: [] };
+  }
+
+  if (sql.includes('DELETE FROM users')) {
+    await User.findByIdAndDelete(params[0]);
+    return { rows: [] };
+  }
+
+  if (sql.includes('UPDATE users SET wins = 0') && sql.includes('losses = 0')) {
+    await User.findByIdAndUpdate(params[0], { wins: 0, losses: 0 });
+    return { rows: [] };
+  }
+
+  if (sql.includes('SELECT COUNT(*)')) {
+    const count = await User.countDocuments();
+    return { rows: [{ count }] };
+  }
+
   return { rows: [] };
 }
 
@@ -128,9 +160,9 @@ function fileQuery(sql, params) {
 
   if (sql.includes('INSERT INTO users')) {
     const id = fileDb.users.length ? Math.max(...fileDb.users.map(u => u.id)) + 1 : 1;
-    fileDb.users.push({ id, nickname: params[0], password_hash: params[1], wins: 0, losses: 0, created_at: new Date().toISOString() });
+    fileDb.users.push({ id, nickname: params[0], password_hash: params[1], wins: 0, losses: 0, is_admin: false, is_banned: false, created_at: new Date().toISOString() });
     saveFileDb();
-    return { rows: [{ id, nickname: params[0], wins: 0, losses: 0 }] };
+    return { rows: [{ id, nickname: params[0], wins: 0, losses: 0, is_admin: false, is_banned: false }] };
   }
 
   if (sql.includes('INSERT INTO loadouts')) {
@@ -160,8 +192,29 @@ function fileQuery(sql, params) {
 
   if (sql.includes('UPDATE users SET')) {
     const u = fileDb.users.find(u => u.id == params[0]);
-    if (u) { sql.includes('wins = wins + 1') ? u.wins++ : u.losses++; saveFileDb(); }
+    if (u) {
+      if (sql.includes('wins = wins + 1')) u.wins++;
+      else if (sql.includes('losses = losses + 1')) u.losses++;
+      else if (sql.includes('is_admin')) u.is_admin = params[1] === 1;
+      else if (sql.includes('is_banned')) u.is_banned = params[1] === 1;
+      else if (sql.includes('wins = 0') && sql.includes('losses = 0')) { u.wins = 0; u.losses = 0; }
+      saveFileDb();
+    }
     return { rows: [] };
+  }
+
+  if (sql.includes('SELECT') && sql.includes('FROM users') && sql.includes('ORDER BY')) {
+    return { rows: fileDb.users.map(u => ({ id: u.id, nickname: u.nickname, wins: u.wins, losses: u.losses, is_admin: u.is_admin || false, is_banned: u.is_banned || false, created_at: u.created_at })) };
+  }
+
+  if (sql.includes('DELETE FROM users')) {
+    fileDb.users = fileDb.users.filter(u => u.id != params[0]);
+    saveFileDb();
+    return { rows: [] };
+  }
+
+  if (sql.includes('SELECT COUNT(*)')) {
+    return { rows: [{ count: fileDb.users.length }] };
   }
 
   return { rows: [] };

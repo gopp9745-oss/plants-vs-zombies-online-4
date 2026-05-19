@@ -8,6 +8,7 @@ const { initDB, query } = require('./db');
 const authRoutes = require('./routes/auth');
 const leaderboardRoutes = require('./routes/leaderboard');
 const inventoryRoutes = require('./routes/inventory');
+const adminRoutes = require('./routes/admin');
 const gameManager = require('./game/gameManager');
 
 const app = express();
@@ -23,6 +24,7 @@ app.use(express.static('public'));
 app.use('/api/auth', authRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/admin', adminRoutes);
 
 const readyStates = {};
 const GAME_DURATION = 300; // 5 minutes in seconds
