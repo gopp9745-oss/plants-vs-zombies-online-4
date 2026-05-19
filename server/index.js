@@ -107,7 +107,7 @@ io.on('connection', (socket) => {
 
     switch (action) {
       case 'place_plant':
-        if (data.row >= 0 && data.row < 5 && data.col >= 0 && data.col < 9 && !state.grid[data.row][data.col]) {
+        if (data.row >= 0 && data.row < 6 && data.col >= 0 && data.col < 10 && !state.grid[data.row][data.col]) {
           if (state.plantSun >= data.cost) {
             state.grid[data.row][data.col] = { type: data.plantId, hp: 100, lastShot: 0 };
             state.plantSun -= data.cost;
@@ -121,7 +121,7 @@ io.on('connection', (socket) => {
             id: Date.now(),
             type: data.zombieId,
             row: data.row,
-            col: 8,
+            col: 9,
             hp: data.hp,
             maxHp: data.hp,
             speed: data.speed,
@@ -168,11 +168,112 @@ io.on('connection', (socket) => {
   });
 });
 
+// Game loop
+const TICK_RATE = 200;
+const SHOT_COOLDOWN = 2000;
+const PROJECTILE_SPEED = 3;
+const HOUSE_DAMAGE_PER_ZOMBIE = 20;
+
+function gameLoop() {
+  const now = Date.now();
+  const games = gameManager.getAllGames();
+
+  for (const gameId in games) {
+    const game = games[gameId];
+    if (game.finished || game.state.gameOver) continue;
+
+    const state = game.state;
+    let changed = false;
+
+    // 1. Move zombies left
+    for (const z of state.zombies) {
+      if (z.frozen) {
+        z.frozen -= TICK_RATE;
+        if (z.frozen <= 0) { delete z.frozen; }
+        continue;
+      }
+      z.col -= z.speed * (TICK_RATE / 1000);
+      changed = true;
+    }
+
+    // 2. Zombies reaching the house (col < -0.5)
+    const attackers = state.zombies.filter(z => z.col < -0.5);
+    if (attackers.length > 0) {
+      state.plantHP -= attackers.length * HOUSE_DAMAGE_PER_ZOMBIE;
+      if (state.plantHP < 0) state.plantHP = 0;
+      state.zombies = state.zombies.filter(z => z.col >= -0.5);
+      changed = true;
+    }
+
+    // 3. Plant shooting
+    for (let row = 0; row < 6; row++) {
+      for (let col = 0; col < 10; col++) {
+        const cell = state.grid[row][col];
+        if (!cell) continue;
+        if (cell.type === 1 || cell.type === 4) continue; // sunflower & cherry bomb don't shoot
+        const hasZombie = state.zombies.some(z => z.row === row);
+        if (!hasZombie) continue;
+        const cooldown = cell.type === 6 ? SHOT_COOLDOWN / 2 : SHOT_COOLDOWN;
+        if (now - (cell.lastShot || 0) < cooldown) continue;
+        state.projectiles.push({ row, col: col + 0.6, damage: 20, slow: cell.type === 5 });
+        cell.lastShot = now;
+        changed = true;
+      }
+    }
+
+    // 4. Move projectiles & collision
+    const aliveProjectiles = [];
+    for (const p of state.projectiles) {
+      p.col += PROJECTILE_SPEED * (TICK_RATE / 1000);
+      let hit = false;
+      for (let i = 0; i < state.zombies.length; i++) {
+        const z = state.zombies[i];
+        if (z.row === p.row && Math.abs(z.col - p.col) < 0.4) {
+          z.hp -= p.damage;
+          if (p.slow) z.frozen = 3000;
+          hit = true;
+          if (z.hp <= 0) { state.zombies.splice(i, 1); i--; }
+          break;
+        }
+      }
+      if (hit) continue;
+      if (p.col >= 10) {
+        state.zombieHP -= 5;
+        if (state.zombieHP < 0) state.zombieHP = 0;
+      } else {
+        aliveProjectiles.push(p);
+      }
+    }
+    state.projectiles = aliveProjectiles;
+
+    // 5. Check win conditions
+    if (state.plantHP <= 0) {
+      state.gameOver = true; state.winner = 'zombie';
+      gameManager.endGame(gameId, 'zombie', { query });
+      io.to(gameId).emit('game_over', { winner: 'zombie' });
+      changed = false;
+    } else if (state.zombieHP <= 0) {
+      state.gameOver = true; state.winner = 'plant';
+      gameManager.endGame(gameId, 'plant', { query });
+      io.to(gameId).emit('game_over', { winner: 'plant' });
+      changed = false;
+    }
+
+    // 6. Broadcast
+    if (changed) {
+      gameManager.updateGame(gameId, state);
+      io.to(gameId).emit('game_state', state);
+    }
+  }
+}
+
 const PORT = process.env.PORT || 3000;
 
 initDB().then(() => {
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    setInterval(gameLoop, TICK_RATE);
+    console.log(`Game loop started (${TICK_RATE}ms tick)`);
   });
 }).catch(err => {
   console.error('Failed to initialize database:', err);

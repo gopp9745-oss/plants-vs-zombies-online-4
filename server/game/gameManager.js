@@ -46,7 +46,7 @@ class GameManager {
   }
 
   createInitialState() {
-    const grid = Array(5).fill(null).map(() => Array(9).fill(null));
+    const grid = Array(6).fill(null).map(() => Array(10).fill(null));
     return {
       grid,
       plantSun: 150,
@@ -60,6 +60,10 @@ class GameManager {
       gameOver: false,
       winner: null
     };
+  }
+
+  getAllGames() {
+    return this.games;
   }
 
   getGame(gameId) {

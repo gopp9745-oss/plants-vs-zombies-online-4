@@ -176,6 +176,7 @@ function startGameLoops() {
 socket.on('game_start', ({ state }) => {
   gameState = state;
   updateSunDisplay();
+  render();
 });
 
 socket.on('game_state', (state) => {
@@ -341,9 +342,11 @@ function drawZombies() {
 function drawProjectiles() {
   if (!gameState.projectiles) return;
   gameState.projectiles.forEach(p => {
+    const x = 160 + p.col * CELL_WIDTH + CELL_WIDTH / 2;
+    const y = 40 + p.row * CELL_HEIGHT + CELL_HEIGHT / 2;
     ctx.fillStyle = '#00FF00';
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
     ctx.fill();
   });
 }
