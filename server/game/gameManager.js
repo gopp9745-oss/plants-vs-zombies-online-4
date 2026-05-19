@@ -82,11 +82,11 @@ class GameManager {
     game.finished = true;
     
     if (winner === 'plant') {
-      db.query('UPDATE users SET wins = wins + 1 WHERE id = $1', [game.plantId]).catch(() => {});
-      db.query('UPDATE users SET losses = losses + 1 WHERE id = $1', [game.zombieId]).catch(() => {});
+      db.query('UPDATE users SET wins = wins + 1, coins = coins + 50 WHERE id = $1', [game.plantId]).catch(() => {});
+      db.query('UPDATE users SET losses = losses + 1, coins = coins + 10 WHERE id = $1', [game.zombieId]).catch(() => {});
     } else {
-      db.query('UPDATE users SET losses = losses + 1 WHERE id = $1', [game.plantId]).catch(() => {});
-      db.query('UPDATE users SET wins = wins + 1 WHERE id = $1', [game.zombieId]).catch(() => {});
+      db.query('UPDATE users SET losses = losses + 1, coins = coins + 10 WHERE id = $1', [game.plantId]).catch(() => {});
+      db.query('UPDATE users SET wins = wins + 1, coins = coins + 50 WHERE id = $1', [game.zombieId]).catch(() => {});
     }
   }
 

@@ -22,6 +22,7 @@ function loadFileDb() {
   }
   if (!fileDb.users) fileDb.users = [];
   if (!fileDb.loadouts) fileDb.loadouts = [];
+  if (!fileDb.unlocked) fileDb.unlocked = {};
 }
 function saveFileDb() { fs.writeFileSync(DB_FILE, JSON.stringify(fileDb, null, 2)); }
 
@@ -31,8 +32,10 @@ const userSchema = new mongoose.Schema({
   password_hash: { type: String, required: true },
   wins: { type: Number, default: 0 },
   losses: { type: Number, default: 0 },
+  coins: { type: Number, default: 0 },
   is_admin: { type: Boolean, default: false },
-  is_banned: { type: Boolean, default: false }
+  is_banned: { type: Boolean, default: false },
+  unlocked_plants: { type: [Number], default: [1, 2, 3] }
 }, { timestamps: true });
 
 const loadoutSchema = new mongoose.Schema({
@@ -71,14 +74,14 @@ async function mongoQuery(sql, params) {
   if (sql.includes('INSERT INTO users')) {
     const exists = await User.findOne({ nickname: params[0] });
     if (exists) return { rows: [] };
-    const user = await User.create({ nickname: params[0], password_hash: params[1] });
-    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses }] };
+    const user = await User.create({ nickname: params[0], password_hash: params[1], unlocked_plants: [1, 2, 3] });
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
   }
 
   if (sql.startsWith('SELECT') && sql.includes('users WHERE nickname')) {
     const user = await User.findOne({ nickname: params[0] });
     if (!user) { console.log('Mongo: user not found:', params[0]); return { rows: [] }; }
-    return { rows: [{ id: user._id.toString(), nickname: user.nickname, password_hash: user.password_hash, wins: user.wins, losses: user.losses, is_admin: user.is_admin || false, is_banned: user.is_banned || false }] };
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, password_hash: user.password_hash, wins: user.wins, losses: user.losses, coins: user.coins || 0, is_admin: user.is_admin || false, is_banned: user.is_banned || false, unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
   }
 
   if (sql.startsWith('SELECT') && sql.includes('id FROM users WHERE nickname')) {
@@ -161,6 +164,22 @@ async function mongoQuery(sql, params) {
     return { rows: [] };
   }
 
+  if (sql.includes('UPDATE users SET unlocked_plants')) {
+    await User.findByIdAndUpdate(params[1], { $addToSet: { unlocked_plants: params[0] } });
+    return { rows: [] };
+  }
+
+  if (sql.includes('UPDATE users SET coins')) {
+    await User.findByIdAndUpdate(params[1], { coins: params[0] });
+    return { rows: [] };
+  }
+
+  if (sql.includes('SELECT') && sql.includes('FROM users WHERE id')) {
+    const user = await User.findById(params[0]);
+    if (!user) return { rows: [] };
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, is_admin: user.is_admin || false, is_banned: user.is_banned || false, unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
+  }
+
   return { rows: [] };
 }
 
@@ -171,9 +190,9 @@ function fileQuery(sql, params) {
 
   if (sql.includes('INSERT INTO users')) {
     const id = fileDb.users.length ? Math.max(...fileDb.users.map(u => u.id)) + 1 : 1;
-    fileDb.users.push({ id, nickname: params[0], password_hash: params[1], wins: 0, losses: 0, is_admin: false, is_banned: false, created_at: new Date().toISOString() });
+    fileDb.users.push({ id, nickname: params[0], password_hash: params[1], wins: 0, losses: 0, coins: 0, is_admin: false, is_banned: false, unlocked_plants: [1, 2, 3], created_at: new Date().toISOString() });
     saveFileDb();
-    return { rows: [{ id, nickname: params[0], wins: 0, losses: 0, is_admin: false, is_banned: false }] };
+    return { rows: [{ id, nickname: params[0], wins: 0, losses: 0, coins: 0, is_admin: false, is_banned: false, unlocked_plants: [1, 2, 3] }] };
   }
 
   if (sql.includes('INSERT INTO loadouts')) {
@@ -189,6 +208,22 @@ function fileQuery(sql, params) {
 
   if (sql.includes('FROM users WHERE id')) {
     return { rows: fileDb.users.filter(u => u.id == params[0]) };
+  }
+
+  if (sql.includes('UPDATE users SET unlocked_plants')) {
+    const u = fileDb.users.find(u => u.id == params[1]);
+    if (u) {
+      if (!u.unlocked_plants) u.unlocked_plants = [1, 2, 3];
+      if (!u.unlocked_plants.includes(params[0])) u.unlocked_plants.push(params[0]);
+      saveFileDb();
+    }
+    return { rows: [] };
+  }
+
+  if (sql.includes('UPDATE users SET coins')) {
+    const u = fileDb.users.find(u => u.id == params[1]);
+    if (u) { u.coins = params[0]; saveFileDb(); }
+    return { rows: [] };
   }
 
   if (sql.includes('ORDER BY wins DESC')) {

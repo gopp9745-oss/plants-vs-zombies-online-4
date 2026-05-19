@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Магазин — PvZ Online</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+  <style>
+    .shop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.5);
+      border-bottom: 2px solid rgba(255,215,0,0.3);
+    }
+    .shop-header h1 {
+      font-family: 'Creepster', cursive;
+      color: #FFD700;
+      font-size: 28px;
+    }
+    .coins-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #FFD700;
+      background: rgba(255,215,0,0.1);
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,215,0,0.3);
+    }
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .shop-item {
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .shop-item:hover {
+      border-color: rgba(255,215,0,0.3);
+      transform: translateY(-3px);
+    }
+    .shop-item.owned {
+      border-color: rgba(76,175,80,0.4);
+      background: rgba(76,175,80,0.05);
+    }
+    .shop-item .emoji { font-size: 48px; display: block; margin-bottom: 10px; }
+    .shop-item .name { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
+    .shop-item .desc { font-size: 12px; color: #888; margin-bottom: 10px; }
+    .shop-item .stats { font-size: 11px; color: #aaa; margin-bottom: 12px; }
+    .buy-btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .buy-btn.available {
+      background: linear-gradient(45deg, #b8860b, #FFD700);
+      color: #000;
+    }
+    .buy-btn.available:hover { transform: scale(1.05); }
+    .buy-btn.expensive {
+      background: rgba(255,255,255,0.1);
+      color: #666;
+      cursor: not-allowed;
+    }
+    .buy-btn.owned-btn {
+      background: rgba(76,175,80,0.2);
+      color: #4CAF50;
+      cursor: default;
+    }
+    .back-link {
+      display: inline-block;
+      padding: 10px 20px;
+      color: #888;
+      text-decoration: none;
+      font-size: 14px;
+      margin: 10px 20px;
+    }
+    .back-link:hover { color: #fff; }
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.9);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,215,0,0.3);
+      font-size: 14px;
+      z-index: 9999;
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="shop-header">
+    <h1>🛒 Магазин растений</h1>
+    <div class="coins-display">
+      <span>🪙</span>
+      <span id="coins-count">0</span>
+    </div>
+  </div>
+
+  <div class="shop-grid" id="shop-grid"></div>
+
+  <a href="/" class="back-link">← Назад в меню</a>
+
+  <script src="js/auth.js"></script>
+  <script src="js/shop-client.js"></script>
+</body>
+</html>

@@ -79,8 +79,10 @@ router.post('/login', async (req, res) => {
         nickname: user.nickname,
         wins: user.wins,
         losses: user.losses,
+        coins: user.coins || 0,
         is_admin: user.is_admin || false,
-        is_banned: user.is_banned || false
+        is_banned: user.is_banned || false,
+        unlocked_plants: user.unlocked_plants || [1, 2, 3]
       }
     });
   } catch (err) {
@@ -101,8 +103,10 @@ router.post('/refresh', async (req, res) => {
       nickname: u.nickname,
       wins: u.wins,
       losses: u.losses,
+      coins: u.coins || 0,
       is_admin: u.is_admin || false,
-      is_banned: u.is_banned || false
+      is_banned: u.is_banned || false,
+      unlocked_plants: u.unlocked_plants || [1, 2, 3]
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

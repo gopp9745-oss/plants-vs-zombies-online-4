@@ -266,6 +266,15 @@ body {
   background: linear-gradient(145deg, rgba(255,215,0,0.15), rgba(184,134,11,0.1));
 }
 
+.menu-btn.shop-btn {
+  border-color: rgba(255,152,0,0.3);
+  background: linear-gradient(145deg, rgba(255,152,0,0.1), rgba(230,120,0,0.05));
+}
+.menu-btn.shop-btn:hover {
+  border-color: #FF9800;
+  background: linear-gradient(145deg, rgba(255,152,0,0.15), rgba(230,120,0,0.1));
+}
+
 /* SCREEN TITLES */
 .screen-title {
   font-family: 'Creepster', cursive;

@@ -25,6 +25,9 @@ async function loadInventory() {
       ];
     }
     
+    const unlocked = currentUser.unlocked_plants || [1, 2, 3];
+    itemsData.plants = itemsData.plants.filter(p => unlocked.includes(p.id));
+    
     renderItems();
     renderLoadout();
   } catch (err) {
