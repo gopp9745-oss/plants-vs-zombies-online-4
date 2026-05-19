@@ -254,7 +254,7 @@ function gameLoop() {
         state.winner = 'plant';
         safeEndGame(gameId, 'plant');
         io.to(gameId).emit('game_over', { winner: 'plant' });
-        return;
+        continue;
       }
     }
 
@@ -264,7 +264,7 @@ function gameLoop() {
       state.winner = 'zombie';
       safeEndGame(gameId, 'zombie');
       io.to(gameId).emit('game_over', { winner: 'zombie' });
-      changed = false;
+      continue;
     }
 
     // 7. Broadcast
@@ -276,6 +276,14 @@ function gameLoop() {
 }
 
 const PORT = process.env.PORT || 3000;
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection:', err.message);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err.message);
+});
 
 initDB().then(() => {
   server.listen(PORT, () => {
