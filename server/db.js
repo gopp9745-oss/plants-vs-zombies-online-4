@@ -5,6 +5,16 @@ const fs = require('fs');
 const DB_FILE = path.join(__dirname, '..', 'game.db');
 let fileDb = { users: [], loadouts: [] };
 let isMongo = false;
+let dbWarned = false;
+
+function warnDb() {
+  if (!dbWarned && !isMongo) {
+    console.warn('\n⚠️  ВНИМАНИЕ: Используется файловая БД (game.db).');
+    console.warn('   На Render данные пропадут после перезапуска!');
+    console.warn('   Настрой MONGO_URI в переменных окружения Render.\n');
+    dbWarned = true;
+  }
+}
 
 function loadFileDb() {
   if (fs.existsSync(DB_FILE)) {
@@ -24,7 +34,7 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const loadoutSchema = new mongoose.Schema({
-  userId: { type: Number, ref: 'User', required: true },
+  userId: { type: String, required: true },
   role: { type: String, enum: ['plant', 'zombie'], required: true },
   slot1: Number, slot2: Number, slot3: Number,
   slot4: Number, slot5: Number, slot6: Number
@@ -65,7 +75,8 @@ async function mongoQuery(sql, params) {
 
   if (sql.startsWith('SELECT') && sql.includes('users WHERE nickname')) {
     const user = await User.findOne({ nickname: params[0] });
-    return { rows: user ? [{ id: user._id.toString(), nickname: user.nickname, password_hash: user.password_hash, wins: user.wins, losses: user.losses }] : [] };
+    if (!user) { console.log('Mongo: user not found:', params[0]); return { rows: [] }; }
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, password_hash: user.password_hash, wins: user.wins, losses: user.losses }] };
   }
 
   if (sql.startsWith('SELECT') && sql.includes('id FROM users WHERE nickname')) {
@@ -79,18 +90,19 @@ async function mongoQuery(sql, params) {
   }
 
   if (sql.includes('INSERT INTO loadouts')) {
-    await Loadout.create({ userId: Number(params[0]), role: params[1], slot1: params[2] || null, slot2: params[3] || null, slot3: params[4] || null, slot4: params[5] || null, slot5: params[6] || null, slot6: params[7] || null });
+    const id = params[0];
+    await Loadout.create({ userId: id, role: params[1], slot1: params[2] || null, slot2: params[3] || null, slot3: params[4] || null, slot4: params[5] || null, slot5: params[6] || null, slot6: params[7] || null });
     return { rows: [] };
   }
 
   if (sql.startsWith('SELECT') && sql.includes('loadouts WHERE user_id')) {
-    const loadouts = await Loadout.find({ userId: parseInt(params[0]), role: params[1] }).lean();
-    return { rows: loadouts.map(l => ({ id: l._id, ...l })) };
+    const loadouts = await Loadout.find({ userId: String(params[0]), role: params[1] }).lean();
+    return { rows: loadouts.map(l => ({ id: l._id.toString(), ...l })) };
   }
 
   if (sql.includes('UPDATE loadouts SET')) {
     await Loadout.findOneAndUpdate(
-      { userId: parseInt(params[6]), role: params[7] },
+      { userId: String(params[6]), role: params[7] },
       { slot1: params[0], slot2: params[1], slot3: params[2], slot4: params[3], slot5: params[4], slot6: params[5] }
     );
     return { rows: [] };
@@ -111,6 +123,7 @@ async function mongoQuery(sql, params) {
 
 /* File-based queries (fallback) */
 function fileQuery(sql, params) {
+  warnDb();
   loadFileDb();
 
   if (sql.includes('INSERT INTO users')) {
