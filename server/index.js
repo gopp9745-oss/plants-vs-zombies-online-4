@@ -119,7 +119,7 @@ io.on('connection', (socket) => {
       case 'place_plant':
         if (data.row >= 0 && data.row < 6 && data.col >= 0 && data.col < 10 && !state.grid[data.row][data.col]) {
           if (state.plantSun >= data.cost) {
-            state.grid[data.row][data.col] = { type: data.plantId, hp: 100, lastShot: 0 };
+            state.grid[data.row][data.col] = { type: data.plantId, hp: 100, lastShot: 0, lastSun: Date.now() };
             state.plantSun -= data.cost;
           }
         }
@@ -214,13 +214,24 @@ io.on('connection', (socket) => {
 
 // Game loop
 const TICK_RATE = 200;
-const SHOT_COOLDOWN = 2000;
-const PROJECTILE_SPEED = 3;
-const HOUSE_DAMAGE_PER_ZOMBIE = 20;
+const BROADCAST_RATE = 500;
+const SHOT_COOLDOWN = 2500;
+const PROJECTILE_SPEED = 4;
+const SUNFLOWER_INTERVAL = 5000;
+let lastBroadcast = 0;
+
+function getZombieDamage(speed) {
+  if (speed >= 2) return 8;
+  if (speed >= 1.5) return 12;
+  if (speed >= 1.2) return 15;
+  if (speed >= 1) return 20;
+  return 25;
+}
 
 function gameLoop() {
   const now = Date.now();
   const games = gameManager.getAllGames();
+  let shouldBroadcast = false;
 
   for (const gameId in games) {
     const game = games[gameId];
@@ -229,27 +240,41 @@ function gameLoop() {
     const state = game.state;
     let changed = false;
 
-    // 1. Move zombies left
+    // 1. Move zombies (slower)
     for (const z of state.zombies) {
       if (z.frozen) {
         z.frozen -= TICK_RATE;
         if (z.frozen <= 0) { delete z.frozen; }
         continue;
       }
-      z.col -= z.speed * (TICK_RATE / 1000);
+      z.col -= z.speed * 0.4 * (TICK_RATE / 1000);
       changed = true;
     }
 
-    // 2. Zombies reaching the house (col < -0.5)
+    // 2. Zombies reaching the house
     const attackers = state.zombies.filter(z => z.col < -0.5);
     if (attackers.length > 0) {
-      state.plantHP -= attackers.length * HOUSE_DAMAGE_PER_ZOMBIE;
+      for (const z of attackers) {
+        state.plantHP -= getZombieDamage(z.speed);
+      }
       if (state.plantHP < 0) state.plantHP = 0;
       state.zombies = state.zombies.filter(z => z.col >= -0.5);
       changed = true;
     }
 
-    // 3. Plant shooting
+    // 3. Sunflower production
+    for (let row = 0; row < 6; row++) {
+      for (let col = 0; col < 10; col++) {
+        const cell = state.grid[row][col];
+        if (cell && cell.type === 1 && now - (cell.lastSun || 0) >= SUNFLOWER_INTERVAL) {
+          state.plantSun += 25;
+          cell.lastSun = now;
+          changed = true;
+        }
+      }
+    }
+
+    // 4. Plant shooting
     for (let row = 0; row < 6; row++) {
       for (let col = 0; col < 10; col++) {
         const cell = state.grid[row][col];
@@ -265,7 +290,7 @@ function gameLoop() {
       }
     }
 
-    // 4. Move projectiles & collision
+    // 5. Move projectiles & collision
     const aliveProjectiles = [];
     for (const p of state.projectiles) {
       p.col += PROJECTILE_SPEED * (TICK_RATE / 1000);
@@ -284,7 +309,7 @@ function gameLoop() {
     }
     state.projectiles = aliveProjectiles;
 
-    // 5. Time-based win check
+    // 6. Time-based win check
     if (state.gameStartTime) {
       const elapsed = (now - state.gameStartTime) / 1000;
       state.timeRemaining = Math.max(0, GAME_DURATION - elapsed);
@@ -298,7 +323,7 @@ function gameLoop() {
       }
     }
 
-    // 6. Plant HP win check
+    // 7. Plant HP win check
     if (state.plantHP <= 0 && !state.gameOver) {
       state.gameOver = true;
       state.winner = 'zombie';
@@ -307,10 +332,18 @@ function gameLoop() {
       continue;
     }
 
-    // 7. Broadcast
-    if (changed) {
-      gameManager.updateGame(gameId, state);
-      io.to(gameId).emit('game_state', state);
+    if (changed) shouldBroadcast = true;
+  }
+
+  // Broadcast at limited rate to prevent lag
+  if (shouldBroadcast && now - lastBroadcast >= BROADCAST_RATE) {
+    lastBroadcast = now;
+    for (const gameId in games) {
+      const game = games[gameId];
+      if (!game.finished && !game.state.gameOver) {
+        gameManager.updateGame(gameId, game.state);
+        io.to(gameId).emit('game_state', game.state);
+      }
     }
   }
 }

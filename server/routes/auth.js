@@ -60,6 +60,11 @@ router.post('/login', async (req, res) => {
       return res.status(500).json({ error: 'Internal error' });
     }
 
+    if (user.is_banned) {
+      console.log('[LOGIN] FAIL: user banned:', nickname);
+      return res.status(403).json({ error: 'Аккаунт заблокирован' });
+    }
+
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
       console.log('[LOGIN] FAIL: wrong password for:', nickname);
