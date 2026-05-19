@@ -11,6 +11,7 @@ const inventoryRoutes = require('./routes/inventory');
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const profileRoutes = require('./routes/profile');
+const friendsRoutes = require('./routes/friends');
 const gameManager = require('./game/gameManager');
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/shop', shopRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/friends', friendsRoutes);
 
 const readyStates = {};
 const GAME_DURATION = 300;
@@ -213,6 +215,56 @@ io.on('connection', (socket) => {
       timeRemaining: g.state.timeRemaining ? Math.ceil(g.state.timeRemaining) : null
     }));
     socket.emit('admin_games_list', active);
+  });
+
+  socket.on('friendly_match', ({ userId, role, loadout, nickname, friendId }) => {
+    currentUserId = userId;
+    userSockets[userId] = socket.id;
+    const gameId = `friendly_${Date.now()}`;
+    gameManager.games[gameId] = {
+      id: gameId,
+      plantId: role === 'plant' ? userId : friendId,
+      zombieId: role === 'zombie' ? userId : friendId,
+      plantNickname: role === 'plant' ? nickname : 'Friend',
+      zombieNickname: role === 'zombie' ? nickname : 'Friend',
+      plantSocketId: role === 'plant' ? socket.id : '',
+      zombieSocketId: role === 'zombie' ? socket.id : '',
+      plantLoadout: loadout,
+      zombieLoadout: [],
+      state: gameManager.createInitialState(),
+      started: Date.now(),
+      finished: false,
+      friendly: true
+    };
+    const game = gameManager.games[gameId];
+    io.to(socket.id).socketsJoin(gameId);
+    readyStates[gameId] = { plant: false, zombie: false };
+    io.to(socket.id).emit('match_found', {
+      gameId, role,
+      plantNickname: role === 'plant' ? nickname : 'Friend',
+      zombieNickname: role === 'zombie' ? nickname : 'Friend',
+      friendly: true
+    });
+    io.to(socket.id).emit('waiting_for_friend', { gameId, friendId });
+  });
+
+  socket.on('friend_join_match', ({ userId, role, loadout, nickname, gameId, friendId }) => {
+    currentUserId = userId;
+    userSockets[userId] = socket.id;
+    const game = gameManager.games[gameId];
+    if (!game) return;
+    game[role === 'plant' ? 'plantId' : 'zombieId'] = userId;
+    game[role === 'plant' ? 'plantNickname' : 'zombieNickname'] = nickname;
+    game[role === 'plant' ? 'plantSocketId' : 'zombieSocketId'] = socket.id;
+    game[role === 'plant' ? 'plantLoadout' : 'zombieLoadout'] = loadout;
+    socket.join(gameId);
+    io.to(socket.id).emit('match_found', {
+      gameId, role,
+      plantNickname: game.plantNickname,
+      zombieNickname: game.zombieNickname,
+      friendly: true
+    });
+    io.to(gameId).emit('both_connected');
   });
 });
 

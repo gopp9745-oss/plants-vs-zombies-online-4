@@ -1,21 +1,28 @@
 const API = window.location.origin + '/api/profile';
-const AVATARS = [
-  '🌱', '🌻', '🌵', '🍀', '🌲', '🌸', '🌺', '🍄',
-  '🧟', '🧟‍♂️', '👹', '💀', '🦇', '🕷️', '🐍', '🦎',
-  '⚔️', '🛡️', '🏹', '🔮', '💎', '👑', '🎭', '🎪',
-  '🐉', '🦅', '🐺', '🦊', '🐻', '🦁', '🐯', '🐲'
-];
+
+const AVATAR_CLANS = {
+  '🌱': 'Растения', '🌻': 'Растения', '🌵': 'Растения', '🍀': 'Растения',
+  '🌲': 'Растения', '🌸': 'Растения', '🌺': 'Растения', '🍄': 'Растения',
+  '🧟': 'Нежить', '🧟‍♂️': 'Нежить', '👹': 'Нежить', '💀': 'Нежить',
+  '🦇': 'Нежить', '🕷️': 'Нежить', '🐍': 'Нежить', '🦎': 'Нежить',
+  '⚔️': 'Воины', '🛡️': 'Воины', '🏹': 'Воины', '🔮': 'Воины',
+  '💎': 'Воины', '👑': 'Воины', '🎭': 'Воины', '🎪': 'Воины',
+  '🐉': 'Звери', '🦅': 'Звери', '🐺': 'Звери', '🦊': 'Звери',
+  '🐻': 'Звери', '🦁': 'Звери', '🐯': 'Звери', '🐲': 'Звери'
+};
+
+const AVATARS = Object.keys(AVATAR_CLANS);
 
 function loadProfile() {
   if (!currentUser) return;
 
   const avatar = currentUser.avatar || '🌱';
-  const clan = currentUser.clan || '';
+  const clan = currentUser.clan || AVATAR_CLANS[avatar] || '';
   const rank = getRank(currentUser.wins || 0);
 
   document.getElementById('profile-avatar').textContent = avatar;
   document.getElementById('profile-name').textContent = currentUser.nickname;
-  document.getElementById('profile-clan').textContent = clan ? `🏰 ${clan}` : '';
+  document.getElementById('profile-clan').textContent = `🏰 ${clan}`;
   document.getElementById('stat-wins').textContent = currentUser.wins || 0;
   document.getElementById('stat-losses').textContent = currentUser.losses || 0;
   document.getElementById('stat-coins').textContent = currentUser.coins || 0;
@@ -32,11 +39,10 @@ function loadProfile() {
     const div = document.createElement('div');
     div.className = 'avatar-option' + (a === avatar ? ' selected' : '');
     div.textContent = a;
+    div.title = AVATAR_CLANS[a];
     div.onclick = () => selectAvatar(a);
     grid.appendChild(div);
   });
-
-  document.getElementById('clan-input').value = clan;
 }
 
 async function selectAvatar(avatar) {
@@ -49,31 +55,10 @@ async function selectAvatar(avatar) {
     const data = await res.json();
     if (res.ok) {
       currentUser.avatar = data.avatar;
-      localStorage.setItem('pvz_user', JSON.stringify(currentUser));
-      loadProfile();
-      showToast('✅ Аватар обновлён!');
-    }
-  } catch (err) {
-    showToast('❌ Ошибка');
-  }
-}
-
-async function saveClan() {
-  const clan = document.getElementById('clan-input').value.trim();
-  try {
-    const res = await fetch(API + '/clan/' + currentUser.id, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clan })
-    });
-    const data = await res.json();
-    if (res.ok) {
       currentUser.clan = data.clan;
       localStorage.setItem('pvz_user', JSON.stringify(currentUser));
       loadProfile();
-      showToast('✅ Клан обновлён!');
-    } else {
-      showToast('❌ ' + data.error);
+      showToast(`✅ Аватар и клан "${data.clan}" обновлены!`);
     }
   } catch (err) {
     showToast('❌ Ошибка');

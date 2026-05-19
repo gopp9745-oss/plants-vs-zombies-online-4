@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Друзья — PvZ Online</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+  <style>
+    .friends-container { max-width: 700px; margin: 0 auto; padding: 30px 20px; }
+    .section-title {
+      font-family: 'Creepster', cursive;
+      font-size: 22px;
+      color: #4CAF50;
+      margin-bottom: 15px;
+    }
+    .search-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .search-input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+    .search-input:focus { border-color: #4CAF50; }
+    .search-btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(45deg, #2e7d32, #4CAF50);
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .friend-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    .friend-avatar { font-size: 32px; }
+    .friend-info { flex: 1; }
+    .friend-name { font-weight: bold; font-size: 15px; }
+    .friend-clan { font-size: 12px; color: #CE93D8; }
+    .friend-stats { font-size: 11px; color: #888; }
+    .friend-actions { display: flex; gap: 6px; }
+    .friend-btn {
+      padding: 6px 12px;
+      border: 1px solid;
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 11px;
+      color: #fff;
+    }
+    .btn-fight { border-color: #4CAF50; color: #4CAF50; }
+    .btn-fight:hover { background: rgba(76,175,80,0.2); }
+    .btn-remove { border-color: #f44336; color: #f44336; }
+    .btn-remove:hover { background: rgba(244,67,54,0.2); }
+    .btn-add { border-color: #2196F3; color: #2196F3; }
+    .btn-add:hover { background: rgba(33,150,243,0.2); }
+    .search-result {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(33,150,243,0.1);
+      border: 1px solid rgba(33,150,243,0.3);
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+    .back-link {
+      display: inline-block;
+      padding: 10px 20px;
+      color: #888;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover { color: #fff; }
+    .empty-msg { color: #666; text-align: center; padding: 30px; }
+    .toast {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.9); color: #fff; padding: 12px 24px;
+      border-radius: 10px; border: 1px solid rgba(255,215,0,0.3);
+      font-size: 14px; z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <div class="friends-container">
+    <h1 class="section-title">👥 Друзья</h1>
+
+    <div class="search-group">
+      <input type="text" class="search-input" id="search-input" placeholder="Никнейм игрока" />
+      <button class="search-btn" onclick="searchPlayer()">Найти</button>
+    </div>
+
+    <div id="search-result"></div>
+
+    <h2 class="section-title">Список друзей</h2>
+    <div id="friends-list"></div>
+
+    <a href="/" class="back-link">← Назад в меню</a>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/friends-client.js"></script>
+</body>
+</html>

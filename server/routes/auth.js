@@ -82,6 +82,7 @@ router.post('/login', async (req, res) => {
         coins: user.coins || 0,
         avatar: user.avatar || '🌱',
         clan: user.clan || '',
+        friends: user.friends || [],
         is_admin: user.is_admin || false,
         is_banned: user.is_banned || false,
         unlocked_plants: user.unlocked_plants || [1, 2, 3]
@@ -108,6 +109,7 @@ router.post('/refresh', async (req, res) => {
       coins: u.coins || 0,
       avatar: u.avatar || '🌱',
       clan: u.clan || '',
+      friends: u.friends || [],
       is_admin: u.is_admin || false,
       is_banned: u.is_banned || false,
       unlocked_plants: u.unlocked_plants || [1, 2, 3]

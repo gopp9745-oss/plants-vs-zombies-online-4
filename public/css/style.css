@@ -295,6 +295,15 @@ body {
   background: linear-gradient(145deg, rgba(33,150,243,0.15), rgba(20,120,200,0.1));
 }
 
+.menu-btn.friends-btn {
+  border-color: rgba(233,30,99,0.3);
+  background: linear-gradient(145deg, rgba(233,30,99,0.1), rgba(200,20,80,0.05));
+}
+.menu-btn.friends-btn:hover {
+  border-color: #E91E63;
+  background: linear-gradient(145deg, rgba(233,30,99,0.15), rgba(200,20,80,0.1));
+}
+
 /* SCREEN TITLES */
 .screen-title {
   font-family: 'Creepster', cursive;

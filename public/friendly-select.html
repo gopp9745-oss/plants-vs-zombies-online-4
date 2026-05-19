@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дружеский бой — PvZ Online</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+  <style>
+    .friendly-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .friendly-title {
+      font-family: 'Creepster', cursive;
+      font-size: 36px;
+      color: #FFD700;
+      margin-bottom: 10px;
+    }
+    .friendly-subtitle {
+      color: #888;
+      margin-bottom: 30px;
+    }
+    .friendly-badge {
+      background: rgba(255,152,0,0.2);
+      border: 1px solid rgba(255,152,0,0.4);
+      color: #FF9800;
+      padding: 6px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 30px;
+    }
+    .role-buttons {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .role-btn {
+      padding: 20px 40px;
+      border: 2px solid;
+      border-radius: 16px;
+      background: transparent;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s;
+      min-width: 160px;
+    }
+    .role-btn:hover { transform: scale(1.05); }
+    .role-btn.plant { border-color: #4CAF50; color: #4CAF50; }
+    .role-btn.plant:hover { background: rgba(76,175,80,0.1); }
+    .role-btn.zombie { border-color: #9C27B0; color: #CE93D8; }
+    .role-btn.zombie:hover { background: rgba(156,39,176,0.1); }
+    .role-btn .emoji { font-size: 48px; display: block; margin-bottom: 8px; }
+    .role-btn .name { font-size: 18px; font-weight: bold; }
+    .back-link {
+      display: inline-block;
+      padding: 10px 20px;
+      color: #888;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover { color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="friendly-container">
+    <h1 class="friendly-title">⚔️ Дружеский бой</h1>
+    <p class="friendly-subtitle">Против: <span id="opponent-name">...</span></p>
+    <div class="friendly-badge">🏆 Без наград — только для фана!</div>
+    <div class="role-buttons">
+      <button class="role-btn plant" onclick="startFriendly('plant')">
+        <span class="emoji">🌻</span>
+        <span class="name">Растение</span>
+      </button>
+      <button class="role-btn zombie" onclick="startFriendly('zombie')">
+        <span class="emoji">🧟</span>
+        <span class="name">Зомби</span>
+      </button>
+    </div>
+    <a href="/friends.html" class="back-link">← Назад к друзьям</a>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    const opponent = JSON.parse(sessionStorage.getItem('friendlyOpponent') || '{}');
+    document.getElementById('opponent-name').textContent = opponent.friendNickname || '???';
+
+    function startFriendly(role) {
+      socket.emit('friendly_match', {
+        userId: currentUser.id,
+        role,
+        loadout: [],
+        nickname: currentUser.nickname,
+        friendId: opponent.friendId
+      });
+    }
+
+    socket.on('match_found', ({ gameId, role, plantNickname, zombieNickname }) => {
+      sessionStorage.setItem('gameRole', role);
+      sessionStorage.setItem('plantNickname', plantNickname);
+      sessionStorage.setItem('zombieNickname', zombieNickname);
+      window.location.href = `/game.html?gameId=${gameId}`;
+    });
+
+    socket.on('waiting_for_friend', ({ gameId, friendId }) => {
+      document.querySelector('.friendly-container').innerHTML = `
+        <h1 class="friendly-title">⏳ Ожидание...</h1>
+        <p class="friendly-subtitle">Отправь ссылку другу:</p>
+        <div style="background:rgba(255,255,255,0.1);padding:12px 20px;border-radius:10px;margin:20px 0;word-break:break-all;color:#FFD700;font-family:monospace;">
+          ${window.location.origin}/friendly-join.html?gameId=${gameId}&friendId=${friendId}
+        </div>
+        <p style="color:#888;font-size:13px;">Друг должен перейти по ссылке чтобы присоединиться</p>
+        <a href="/friends.html" class="back-link">← Отменить</a>
+      `;
+    });
+  </script>
+</body>
+</html>

@@ -80,6 +80,7 @@ class GameManager {
     const game = this.games[gameId];
     if (!game || game.finished) return;
     game.finished = true;
+    if (game.friendly) return;
     
     if (winner === 'plant') {
       db.query('UPDATE users SET wins = wins + 1, coins = coins + 50 WHERE id = $1', [game.plantId]).catch(() => {});
