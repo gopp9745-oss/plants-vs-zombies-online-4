@@ -79,12 +79,33 @@ router.post('/login', async (req, res) => {
         nickname: user.nickname,
         wins: user.wins,
         losses: user.losses,
-        is_admin: user.is_admin || false
+        is_admin: user.is_admin || false,
+        is_banned: user.is_banned || false
       }
     });
   } catch (err) {
     console.error('[LOGIN] error:', err.message, err.stack);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+router.post('/refresh', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    const result = await query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    const u = result.rows[0];
+    res.json({
+      id: u.id,
+      nickname: u.nickname,
+      wins: u.wins,
+      losses: u.losses,
+      is_admin: u.is_admin || false,
+      is_banned: u.is_banned || false
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

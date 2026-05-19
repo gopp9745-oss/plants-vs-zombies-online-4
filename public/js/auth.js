@@ -2,10 +2,28 @@ const API_URL = window.location.origin;
 
 window.currentUser = null;
 
-function checkAuth() {
+async function checkAuth() {
   const user = localStorage.getItem('pvz_user');
   if (user) {
     currentUser = JSON.parse(user);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id })
+      });
+      if (res.ok) {
+        const fresh = await res.json();
+        currentUser = fresh;
+        localStorage.setItem('pvz_user', JSON.stringify(fresh));
+        if (fresh.is_banned) {
+          localStorage.removeItem('pvz_user');
+          currentUser = null;
+          window.location.href = '/login.html';
+          return;
+        }
+      }
+    } catch (_) {}
     if (window.location.pathname.includes('login.html')) {
       window.location.href = '/';
     }
@@ -13,6 +31,8 @@ function checkAuth() {
     window.location.href = '/login.html';
   }
 }
+
+checkAuth();
 
 async function login() {
   const nickname = document.getElementById('login-nickname').value.trim();

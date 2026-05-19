@@ -86,6 +86,12 @@ async function mongoQuery(sql, params) {
     return { rows: user ? [{ id: user._id.toString() }] : [] };
   }
 
+  if (sql.startsWith('SELECT') && sql.includes('FROM users WHERE id')) {
+    const user = await User.findById(params[0]);
+    if (!user) return { rows: [] };
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, is_admin: user.is_admin || false, is_banned: user.is_banned || false }] };
+  }
+
   if (sql.includes('ORDER BY wins DESC')) {
     const users = await User.find().sort({ wins: -1 }).limit(50).lean();
     return { rows: users.map(u => ({ nickname: u.nickname, wins: u.wins, losses: u.losses, total_games: u.wins + u.losses })) };
@@ -174,6 +180,10 @@ function fileQuery(sql, params) {
 
   if (sql.includes('users WHERE nickname')) {
     return { rows: fileDb.users.filter(u => u.nickname === params[0]) };
+  }
+
+  if (sql.includes('FROM users WHERE id')) {
+    return { rows: fileDb.users.filter(u => u.id == params[0]) };
   }
 
   if (sql.includes('ORDER BY wins DESC')) {
