@@ -175,6 +175,26 @@
     .btn-admin { border-color: #FFD700; color: #FFD700; }
     .btn-reset { border-color: #2196F3; color: #2196F3; }
     .btn-delete { border-color: #9C27B0; color: #9C27B0; }
+    .btn-kick { border-color: #FF5722; color: #FF5722; }
+    .btn-end { border-color: #E91E63; color: #E91E63; }
+
+    .games-section {
+      margin-top: 30px;
+    }
+    .games-section h2 {
+      font-family: 'Creepster', cursive;
+      color: #FF5722;
+      font-size: 22px;
+      margin-bottom: 15px;
+    }
+    .game-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .status-playing { background: rgba(76,175,80,0.2); color: #4CAF50; }
 
     @media (max-width: 768px) {
       .stats-row { flex-direction: column; }
@@ -223,8 +243,27 @@
         <tbody id="users-tbody"></tbody>
       </table>
     </div>
+
+    <div class="games-section">
+      <h2>🎮 Активные игры</h2>
+      <button id="refresh-games-btn" onclick="loadGames()">🔄 Обновить</button>
+      <table>
+        <thead>
+          <tr>
+            <th>Игра</th>
+            <th>🌻 Растение</th>
+            <th>🧟 Зомби</th>
+            <th>HP дома</th>
+            <th>Время</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody id="games-tbody"></tbody>
+      </table>
+    </div>
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

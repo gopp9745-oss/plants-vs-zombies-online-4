@@ -1,4 +1,5 @@
 const API = window.location.origin + '/api/admin';
+const adminSocket = io();
 let adminToken = localStorage.getItem('adminToken');
 
 const savedUser = localStorage.getItem('pvz_user');
@@ -9,9 +10,11 @@ if (user && user.is_admin) {
   localStorage.setItem('adminToken', adminToken);
   showDashboard();
   loadUsers();
+  loadGames();
 } else if (adminToken) {
   showDashboard();
   loadUsers();
+  loadGames();
 }
 
 async function login() {
@@ -29,6 +32,7 @@ async function login() {
       localStorage.setItem('adminToken', adminToken);
       showDashboard();
       loadUsers();
+      loadGames();
     } else {
       errEl.textContent = 'Неверный пароль';
     }
@@ -81,6 +85,7 @@ async function loadUsers() {
       if (!u.is_banned) actions += `<button class="action-btn btn-ban" onclick="banUser('${u.id}')">Бан</button>`;
       else actions += `<button class="action-btn btn-unban" onclick="unbanUser('${u.id}')">Разбан</button>`;
       if (!u.is_admin) actions += `<button class="action-btn btn-admin" onclick="makeAdmin('${u.id}')">Админ</button>`;
+      actions += `<button class="action-btn btn-kick" onclick="kickUser('${u.id}')">Кик</button>`;
       actions += `<button class="action-btn btn-reset" onclick="resetStats('${u.id}')">Сброс</button>`;
       actions += `<button class="action-btn btn-delete" onclick="deleteUser('${u.id}')">Удалить</button>`;
 
@@ -98,6 +103,36 @@ async function loadUsers() {
   }
 }
 
+function loadGames() {
+  adminSocket.emit('admin_list_games', { adminToken });
+}
+
+adminSocket.on('admin_games_list', (games) => {
+  const tbody = document.getElementById('games-tbody');
+  tbody.innerHTML = '';
+  if (!games || games.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:#888;padding:20px;">Нет активных игр</td></tr>';
+    return;
+  }
+  games.forEach(g => {
+    const tr = document.createElement('tr');
+    const time = g.timeRemaining ? `${Math.floor(g.timeRemaining / 60)}:${(g.timeRemaining % 60).toString().padStart(2, '0')}` : '—';
+    tr.innerHTML = `
+      <td>${g.gameId}</td>
+      <td>${g.plant}</td>
+      <td>${g.zombie}</td>
+      <td>${g.plantHP}%</td>
+      <td>${time}</td>
+      <td>
+        <button class="action-btn btn-end" onclick="endGame('${g.gameId}', 'plant')">🌻 Победа</button>
+        <button class="action-btn btn-end" onclick="endGame('${g.gameId}', 'zombie')">🧟 Победа</button>
+        <button class="action-btn btn-kick" onclick="kickGame('${g.gameId}')">Закрыть</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+});
+
 async function banUser(id) {
   await fetch(API + '/users/' + id + '/ban', { method: 'POST', headers: headers() });
   loadUsers();
@@ -114,6 +149,11 @@ async function makeAdmin(id) {
   loadUsers();
 }
 
+function kickUser(id) {
+  if (!confirm('Кикнуть игрока из игры?')) return;
+  adminSocket.emit('admin_kick', { targetUserId: id, adminToken });
+}
+
 async function resetStats(id) {
   if (!confirm('Сбросить статистику?')) return;
   await fetch(API + '/users/' + id + '/reset', { method: 'POST', headers: headers() });
@@ -124,4 +164,16 @@ async function deleteUser(id) {
   if (!confirm('Удалить пользователя навсегда?')) return;
   await fetch(API + '/users/' + id, { method: 'DELETE', headers: headers() });
   loadUsers();
+}
+
+function endGame(gameId, winner) {
+  if (!confirm(`Завершить игру и присудить победу ${winner === 'plant' ? '🌻 растениям' : '🧟 зомби'}?`)) return;
+  adminSocket.emit('admin_end_game', { gameId, winner, adminToken });
+  loadGames();
+}
+
+function kickGame(gameId) {
+  if (!confirm('Закрыть эту игру?')) return;
+  adminSocket.emit('admin_end_game', { gameId, winner: 'plant', adminToken });
+  loadGames();
 }

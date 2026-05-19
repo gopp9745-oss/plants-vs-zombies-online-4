@@ -190,7 +190,7 @@ socket.on('game_state', (state) => {
   render();
 });
 
-socket.on('game_over', ({ winner }) => {
+socket.on('game_over', ({ winner, admin }) => {
   clearInterval(sunInterval);
   clearInterval(zombieSunInterval);
   clearInterval(timerInterval);
@@ -199,7 +199,11 @@ socket.on('game_over', ({ winner }) => {
   const message = document.getElementById('overlay-message');
   const btn = document.getElementById('overlay-btn');
   overlay.classList.remove('hidden');
-  if (winner === role) {
+  if (admin) {
+    title.textContent = '🛡️ Игра завершена админом';
+    title.style.color = '#FF5722';
+    message.textContent = winner === role ? '🎉 Вам засчитана победа!' : '💀 Вам засчитано поражение';
+  } else if (winner === role) {
     title.textContent = '🎉 Победа!'; title.style.color = '#4CAF50';
     message.textContent = 'Отлично сыграно!';
   } else {
@@ -208,6 +212,22 @@ socket.on('game_over', ({ winner }) => {
   }
   btn.textContent = '🏠 В меню';
   btn.onclick = returnToMenu;
+});
+
+socket.on('admin_kicked', () => {
+  clearInterval(sunInterval);
+  clearInterval(zombieSunInterval);
+  clearInterval(timerInterval);
+  const overlay = document.getElementById('overlay');
+  const title = document.getElementById('overlay-title');
+  const message = document.getElementById('overlay-message');
+  const btn = document.getElementById('overlay-btn');
+  title.textContent = '🛡️ Кикнут админом';
+  title.style.color = '#FF5722';
+  message.textContent = 'Админ завершил вашу игру';
+  btn.textContent = '🏠 В меню';
+  btn.onclick = returnToMenu;
+  overlay.classList.remove('hidden');
 });
 
 function updateSunDisplay() {

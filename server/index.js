@@ -27,7 +27,9 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/admin', adminRoutes);
 
 const readyStates = {};
-const GAME_DURATION = 300; // 5 minutes in seconds
+const GAME_DURATION = 300;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const userSockets = {}; // 5 minutes in seconds
 
 function safeEndGame(gameId, winner) {
   try {
@@ -44,6 +46,7 @@ io.on('connection', (socket) => {
 
   socket.on('join_game', async ({ userId, role, loadout, nickname }) => {
     currentUserId = userId;
+    userSockets[userId] = socket.id;
 
     const gameId = gameManager.findMatch(userId, role, loadout, nickname, socket.id);
 
@@ -169,8 +172,43 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     if (currentUserId) {
+      delete userSockets[currentUserId];
       gameManager.cancelWait(currentUserId);
     }
+  });
+
+  socket.on('admin_kick', async ({ targetUserId, adminToken }) => {
+    if (adminToken !== ADMIN_PASSWORD) return;
+    const targetSocketId = userSockets[targetUserId];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('admin_kicked');
+      io.sockets.sockets.get(targetSocketId)?.disconnect(true);
+      console.log('Admin kicked user:', targetUserId);
+    }
+  });
+
+  socket.on('admin_end_game', async ({ gameId, winner, adminToken }) => {
+    if (adminToken !== ADMIN_PASSWORD) return;
+    const game = gameManager.getGame(gameId);
+    if (!game || game.finished) return;
+    game.state.gameOver = true;
+    game.state.winner = winner;
+    safeEndGame(gameId, winner);
+    io.to(gameId).emit('game_over', { winner, admin: true });
+    console.log('Admin ended game:', gameId, 'winner:', winner);
+  });
+
+  socket.on('admin_list_games', async ({ adminToken }) => {
+    if (adminToken !== ADMIN_PASSWORD) return;
+    const games = gameManager.getAllGames();
+    const active = Object.values(games).filter(g => !g.finished).map(g => ({
+      gameId: g.id,
+      plant: g.plantNickname,
+      zombie: g.zombieNickname,
+      plantHP: g.state.plantHP,
+      timeRemaining: g.state.timeRemaining ? Math.ceil(g.state.timeRemaining) : null
+    }));
+    socket.emit('admin_games_list', active);
   });
 });
 
