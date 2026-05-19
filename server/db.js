@@ -126,12 +126,12 @@ async function mongoQuery(sql, params) {
   }
 
   if (sql.includes('UPDATE users SET is_admin')) {
-    await User.findByIdAndUpdate(params[0], { is_admin: params[1] === 1 });
+    await User.findByIdAndUpdate(params[1], { is_admin: params[0] === 1 });
     return { rows: [] };
   }
 
   if (sql.includes('UPDATE users SET is_banned')) {
-    await User.findByIdAndUpdate(params[0], { is_banned: params[1] === 1 });
+    await User.findByIdAndUpdate(params[1], { is_banned: params[0] === 1 });
     return { rows: [] };
   }
 
