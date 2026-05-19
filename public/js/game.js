@@ -233,6 +233,7 @@ socket.on('admin_kicked', () => {
 function updateSunDisplay() {
   if (!gameState) return;
   document.getElementById('sun-count').textContent = role === 'plant' ? gameState.plantSun : gameState.zombieSun;
+  document.getElementById('resource-icon').textContent = role === 'plant' ? '☀️' : '❤️';
 }
 
 function updateTimerDisplay() {
