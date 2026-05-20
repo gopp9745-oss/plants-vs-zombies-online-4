@@ -73,12 +73,15 @@ router.post('/remove/:userId', async (req, res) => {
 router.post('/search', async (req, res) => {
   try {
     const { nickname } = req.body;
+    console.log('[FRIENDS SEARCH] searching for:', nickname);
     if (!nickname) return res.status(400).json({ error: 'nickname required' });
     const result = await query('SELECT * FROM users WHERE nickname = $1', [nickname]);
+    console.log('[FRIENDS SEARCH] rows found:', result.rows.length);
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     const u = result.rows[0];
     res.json({ id: u.id, nickname: u.nickname, avatar: u.avatar || '🌱', clan: u.clan || '', wins: u.wins, losses: u.losses });
   } catch (err) {
+    console.error('[FRIENDS SEARCH] error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

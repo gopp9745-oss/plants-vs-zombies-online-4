@@ -82,7 +82,7 @@ async function mongoQuery(sql, params) {
   }
 
   if (sql.startsWith('SELECT') && sql.includes('users WHERE nickname')) {
-    const user = await User.findOne({ nickname: params[0] });
+    const user = await User.findOne({ nickname: new RegExp('^' + params[0] + '$', 'i') });
     if (!user) { console.log('Mongo: user not found:', params[0]); return { rows: [] }; }
     return { rows: [{ id: user._id.toString(), nickname: user.nickname, password_hash: user.password_hash, wins: user.wins, losses: user.losses, coins: user.coins || 0, avatar: user.avatar || '🌱', clan: user.clan || '', friends: user.friends || [], is_admin: user.is_admin || false, is_banned: user.is_banned || false, unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
   }
@@ -221,7 +221,7 @@ function fileQuery(sql, params) {
   }
 
   if (sql.includes('users WHERE nickname')) {
-    return { rows: fileDb.users.filter(u => u.nickname === params[0]) };
+    return { rows: fileDb.users.filter(u => u.nickname.toLowerCase() === params[0].toLowerCase()) };
   }
 
   if (sql.includes('FROM users WHERE id')) {
