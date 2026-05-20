@@ -86,7 +86,7 @@ async function loadLeaderboard() {
       const clanTag = player.clan ? ` <span class="clan-tag">🏰 ${player.clan}</span>` : '';
       row.innerHTML = `
         <td class="rank">${getRankBadge(index + 1)}</td>
-        <td>${avatar} ${player.nickname || '???'}<span class="rank-badge" style="color:${rank.color}">${rank.emoji} ${rank.name}</span>${clanTag}</td>
+        <td><span class="lb-player"><span class="lb-avatar">${avatar}</span>${player.nickname || '???'}<span class="rank-badge" style="color:${rank.color}">${rank.emoji} ${rank.name}</span>${clanTag}</span></td>
         <td class="wins">${player.wins ?? 0}</td>
         <td class="losses">${player.losses ?? 0}</td>
         <td>${player.total_games ?? 0}</td>

@@ -237,7 +237,16 @@ body {
   border-color: #4CAF50;
 }
 
-.account-chip .chip-avatar { font-size: 16px; }
+.account-chip .chip-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(76, 175, 80, 0.2);
+  font-size: 12px;
+}
 .account-chip .chip-name { font-weight: bold; }
 .account-chip .chip-remove {
   margin-left: 4px;
@@ -276,15 +285,16 @@ body {
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: linear-gradient(45deg, #2e7d32, #4CAF50);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  font-size: 18px;
+  font-size: 22px;
+  border: 2px solid rgba(76, 175, 80, 0.4);
+  flex-shrink: 0;
 }
 
 .user-details {
@@ -580,6 +590,25 @@ body {
 .save-btn:hover { transform: scale(1.03); }
 
 /* LEADERBOARD */
+.lb-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(76, 175, 80, 0.15);
+  border: 2px solid rgba(76, 175, 80, 0.3);
+  font-size: 18px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.lb-player {
+  display: inline-flex;
+  align-items: center;
+}
+
 #leaderboard-table {
   width: 100%;
   max-width: 700px;
