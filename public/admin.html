@@ -234,6 +234,9 @@
       transition: transform 0.2s;
     }
     .gift-btn:hover { transform: scale(1.05); }
+    .gift-all-btn {
+      background: linear-gradient(45deg, #E91E63, #C2185B);
+    }
     #gift-result {
       margin-top: 15px;
       padding: 10px;
@@ -353,6 +356,7 @@
         <input type="number" id="gift-amount" class="gift-input" placeholder="Кол-во / ID" />
         <input type="text" id="gift-message" class="gift-input" placeholder="Сообщение (необязательно)" />
         <button class="gift-btn" onclick="sendGift()">🎁 Отправить</button>
+        <button class="gift-btn gift-all-btn" onclick="sendGiftAll()">🎁🎁 Подарок всем</button>
       </div>
       <div id="gift-result"></div>
     </div>

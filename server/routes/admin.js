@@ -165,4 +165,60 @@ router.get('/gifts/:userId', authMiddleware, async (req, res) => {
   }
 });
 
+router.post('/gift-all', authMiddleware, async (req, res) => {
+  try {
+    const { type, amount, itemId, message } = req.body;
+    const validTypes = ['coins', 'plant', 'zombie', 'box', 'role'];
+    if (!validTypes.includes(type)) return res.status(400).json({ error: 'Invalid gift type' });
+
+    const allUsersResult = await query('SELECT * FROM users ORDER BY created_at DESC');
+    const users = allUsersResult.rows.filter(u => u.nickname !== ADMIN_NICKNAME);
+    
+    if (users.length === 0) return res.json({ message: 'No users to gift', count: 0 });
+
+    const gift = {
+      type,
+      amount: amount || 0,
+      itemId: itemId || null,
+      from: req.adminUser.nickname,
+      date: new Date().toISOString(),
+      message: message || 'Подарок всем игрокам!'
+    };
+
+    let count = 0;
+    for (const user of users) {
+      let gifts = user.gifts || [];
+      gifts.push(gift);
+
+      if (type === 'coins') {
+        const currentCoins = user.coins || 0;
+        await query('UPDATE users SET coins = $1 WHERE id = $2', [currentCoins + amount, user.id]);
+      } else if (type === 'plant') {
+        const unlocked = user.unlocked_plants || [1, 2, 3];
+        if (!unlocked.includes(itemId)) {
+          await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [itemId, user.id]);
+        }
+      } else if (type === 'zombie') {
+        const unlocked = user.unlocked_zombies || [1, 2, 3];
+        if (!unlocked.includes(itemId)) {
+          await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [itemId, user.id]);
+        }
+      } else if (type === 'role') {
+        const validRoles = ['player', 'moderator', 'super_player', 'vip'];
+        if (validRoles.includes(itemId)) {
+          await query('UPDATE users SET role = $1 WHERE id = $2', [itemId, user.id]);
+        }
+      }
+
+      await query('UPDATE users SET gifts = $1 WHERE id = $2', [gifts, user.id]);
+      count++;
+    }
+
+    const typeNames = { coins: 'монеты', plant: 'растение', zombie: 'зомби', box: 'бокс', role: 'роль' };
+    res.json({ message: `Подарок отправлен ${count} игрокам: ${amount || ''} ${typeNames[type]}`, count });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

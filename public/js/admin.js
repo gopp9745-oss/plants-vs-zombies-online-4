@@ -265,6 +265,49 @@ function quickGift(userId, nickname) {
   showToast('Выбран: ' + nickname);
 }
 
+async function sendGiftAll() {
+  const type = document.getElementById('gift-type').value;
+  const amount = parseInt(document.getElementById('gift-amount').value) || 0;
+  const message = document.getElementById('gift-message').value.trim();
+  const resultEl = document.getElementById('gift-result');
+
+  if (type === 'coins' && amount <= 0) {
+    resultEl.className = 'error';
+    resultEl.textContent = 'Укажите количество монет';
+    return;
+  }
+  if ((type === 'plant' || type === 'zombie' || type === 'role') && amount <= 0) {
+    resultEl.className = 'error';
+    resultEl.textContent = 'Укажите ID';
+    return;
+  }
+
+  if (!confirm(`Отправить подарок всем игрокам? (${type})`)) return;
+
+  try {
+    const res = await fetch(API + '/gift-all', {
+      method: 'POST',
+      headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, amount, itemId: amount, message })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      resultEl.className = 'success';
+      resultEl.textContent = '✅ ' + data.message;
+      document.getElementById('gift-amount').value = '';
+      document.getElementById('gift-message').value = '';
+      loadUsers();
+      loadGiftUsers();
+    } else {
+      resultEl.className = 'error';
+      resultEl.textContent = '❌ ' + data.error;
+    }
+  } catch (e) {
+    resultEl.className = 'error';
+    resultEl.textContent = '❌ Ошибка подключения';
+  }
+}
+
 function showToast(msg) {
   const toast = document.createElement('div');
   toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);color:#fff;padding:12px 24px;border-radius:10px;border:1px solid rgba(255,215,0,0.3);font-size:14px;z-index:9999;';
