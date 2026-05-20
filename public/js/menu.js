@@ -12,21 +12,23 @@ function updateUserInfo() {
   const el = document.getElementById('user-info');
   if (currentUser && el) {
     const rank = getRank(currentUser.wins || 0);
-    const adminBadge = currentUser.is_admin ? '<span class="admin-badge">🛡️ Админ</span>' : '';
+    const adminBadge = currentUser.nickname === 'admin' ? '<span class="admin-badge">🛡️ Админ</span>' : '';
+    const roleNames = { player: '', moderator: '🔷 Модератор', super_player: '⭐ Сверх игрок', vip: '👑 V.I.P' };
+    const roleBadge = currentUser.role && currentUser.role !== 'player' ? `<span class="rank-badge" style="color:#FFD700">${roleNames[currentUser.role]}</span>` : '';
     const avatar = currentUser.avatar || '';
     const clan = currentUser.clan ? ` <span class="clan-tag">🏰 ${currentUser.clan}</span>` : '';
     el.innerHTML = `
       <div class="user-card">
         <div class="user-avatar">${avatar}</div>
         <div class="user-details">
-          <span class="user-nickname">${currentUser.nickname}<span class="rank-badge" style="color:${rank.color}">${rank.emoji} ${rank.name}</span> ${clan} ${adminBadge}</span>
+          <span class="user-nickname">${currentUser.nickname}${roleBadge}<span class="rank-badge" style="color:${rank.color}">${rank.emoji} ${rank.name}</span> ${clan} ${adminBadge}</span>
           <span class="user-stats">🏆 ${currentUser.wins} / 💀 ${currentUser.losses}</span>
         </div>
       </div>
     `;
   }
   const adminBtn = document.getElementById('admin-menu-btn');
-  if (adminBtn) adminBtn.style.display = currentUser && currentUser.is_admin ? 'block' : 'none';
+  if (adminBtn) adminBtn.style.display = currentUser && currentUser.nickname === 'admin' ? 'block' : 'none';
   renderAccountSwitcher();
 }
 

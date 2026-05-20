@@ -3,14 +3,17 @@ const bcrypt = require('bcryptjs');
 const { query } = require('../db');
 const router = express.Router();
 
+const ADMIN_NICKNAME = 'admin';
+
 async function authMiddleware(req, res, next) {
   const userId = req.headers['x-user-id'];
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
   try {
     const result = await query('SELECT * FROM users WHERE id = $1', [userId]);
     if (result.rows.length === 0) return res.status(401).json({ error: 'User not found' });
-    if (!result.rows[0].is_admin) return res.status(403).json({ error: 'Admin access required' });
-    req.adminUser = result.rows[0];
+    const user = result.rows[0];
+    if (user.nickname !== ADMIN_NICKNAME) return res.status(403).json({ error: 'Admin access required' });
+    req.adminUser = user;
     next();
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -19,19 +22,6 @@ async function authMiddleware(req, res, next) {
 
 router.get('/verify', authMiddleware, (req, res) => {
   res.json({ success: true, user: { id: req.adminUser.id, nickname: req.adminUser.nickname } });
-});
-
-router.post('/setup-first-admin', async (req, res) => {
-  try {
-    const admins = await query('SELECT * FROM users WHERE is_admin = $1', [1]);
-    if (admins.rows.length > 0) return res.status(400).json({ error: 'Admin already exists' });
-    const { userId } = req.body;
-    if (!userId) return res.status(400).json({ error: 'userId required' });
-    await query('UPDATE users SET is_admin = $1 WHERE id = $2', [1, userId]);
-    res.json({ message: 'First admin created' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 router.get('/stats', authMiddleware, async (req, res) => {
@@ -71,10 +61,14 @@ router.post('/users/:id/unban', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/users/:id/admin', authMiddleware, async (req, res) => {
+router.post('/users/:id/role', authMiddleware, async (req, res) => {
   try {
-    await query('UPDATE users SET is_admin = $1 WHERE id = $2', [1, req.params.id]);
-    res.json({ message: 'User promoted to admin' });
+    const { role } = req.body;
+    const validRoles = ['player', 'moderator', 'super_player', 'vip'];
+    if (!validRoles.includes(role)) return res.status(400).json({ error: 'Invalid role' });
+    await query('UPDATE users SET role = $1 WHERE id = $2', [role, req.params.id]);
+    const roleNames = { player: 'Игрок', moderator: 'Модератор', super_player: 'Сверх игрок', vip: 'V.I.P' };
+    res.json({ message: `Role set to ${roleNames[role]}` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

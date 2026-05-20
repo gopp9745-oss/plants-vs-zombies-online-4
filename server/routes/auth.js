@@ -33,7 +33,7 @@ router.post('/register', async (req, res) => {
     await query('INSERT INTO loadouts (user_id, role) VALUES ($1, $2)', [user.id, 'zombie']);
 
     console.log('[REGISTER] success, user id:', user.id);
-    res.json({ message: 'Registered successfully', user: { ...user, is_admin: false } });
+    res.json({ message: 'Registered successfully', user: { ...user, is_admin: false, role: 'player' } });
   } catch (err) {
     console.error('[REGISTER] error:', err.message);
     res.status(500).json({ error: 'Registration failed' });
@@ -86,7 +86,8 @@ router.post('/login', async (req, res) => {
         is_admin: user.is_admin || false,
         is_banned: user.is_banned || false,
         unlocked_plants: user.unlocked_plants || [1, 2, 3],
-        unlocked_zombies: user.unlocked_zombies || [1, 2, 3]
+        unlocked_zombies: user.unlocked_zombies || [1, 2, 3],
+        role: user.role || 'player'
       }
     });
   } catch (err) {
@@ -114,7 +115,8 @@ router.post('/refresh', async (req, res) => {
       is_admin: u.is_admin || false,
       is_banned: u.is_banned || false,
       unlocked_plants: u.unlocked_plants || [1, 2, 3],
-      unlocked_zombies: u.unlocked_zombies || [1, 2, 3]
+      unlocked_zombies: u.unlocked_zombies || [1, 2, 3],
+      role: u.role || 'player'
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

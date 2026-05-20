@@ -184,7 +184,7 @@ io.on('connection', (socket) => {
 
   socket.on('admin_kick', async ({ targetUserId, userId }) => {
     const adminCheck = await query('SELECT * FROM users WHERE id = $1', [userId]);
-    if (!adminCheck.rows.length || !adminCheck.rows[0].is_admin) return;
+    if (!adminCheck.rows.length || adminCheck.rows[0].nickname !== 'admin') return;
     const targetSocketId = userSockets[targetUserId];
     if (targetSocketId) {
       io.to(targetSocketId).emit('admin_kicked');
@@ -195,7 +195,7 @@ io.on('connection', (socket) => {
 
   socket.on('admin_end_game', async ({ gameId, winner, userId }) => {
     const adminCheck = await query('SELECT * FROM users WHERE id = $1', [userId]);
-    if (!adminCheck.rows.length || !adminCheck.rows[0].is_admin) return;
+    if (!adminCheck.rows.length || adminCheck.rows[0].nickname !== 'admin') return;
     const game = gameManager.getGame(gameId);
     if (!game || game.finished) return;
     game.state.gameOver = true;
@@ -207,7 +207,7 @@ io.on('connection', (socket) => {
 
   socket.on('admin_list_games', async ({ userId }) => {
     const adminCheck = await query('SELECT * FROM users WHERE id = $1', [userId]);
-    if (!adminCheck.rows.length || !adminCheck.rows[0].is_admin) return;
+    if (!adminCheck.rows.length || adminCheck.rows[0].nickname !== 'admin') return;
     const games = gameManager.getAllGames();
     const active = Object.values(games).filter(g => !g.finished).map(g => ({
       gameId: g.id,

@@ -8,45 +8,12 @@ if (!currentUser) {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('dashboard').classList.remove('active');
   document.getElementById('login-error').textContent = 'Сначала войдите в аккаунт';
-} else if (!currentUser.is_admin) {
+} else if (currentUser.nickname !== 'admin') {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('dashboard').classList.remove('active');
-  document.getElementById('login-error').textContent = 'У вас нет прав администратора';
-  checkIfFirstAdmin();
+  document.getElementById('login-error').textContent = 'Доступ только для аккаунта "admin"';
 } else {
   verifyAdmin();
-}
-
-async function checkIfFirstAdmin() {
-  try {
-    const res = await fetch(API + '/setup-first-admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: currentUser.id })
-    });
-    if (res.ok) {
-      document.getElementById('setup-admin-btn').style.display = 'block';
-      document.getElementById('login-error').textContent = 'В системе нет админов. Нажмите кнопку чтобы стать первым.';
-    }
-  } catch (e) {}
-}
-
-async function setupFirstAdmin() {
-  try {
-    const res = await fetch(API + '/setup-first-admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: currentUser.id })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      location.reload();
-    } else {
-      document.getElementById('login-error').textContent = data.error;
-    }
-  } catch (e) {
-    document.getElementById('login-error').textContent = 'Ошибка';
-  }
 }
 
 async function verifyAdmin() {
@@ -96,15 +63,24 @@ async function loadUsers() {
     tbody.innerHTML = '';
     users.forEach(u => {
       const tr = document.createElement('tr');
+      const roleNames = { player: 'Игрок', moderator: 'Модератор', super_player: 'Сверх игрок', vip: 'V.I.P' };
+      const roleKey = u.role || 'player';
       let badge = '';
-      if (u.is_admin) badge = '<span class="badge badge-admin">Админ</span>';
+      if (u.nickname === 'admin') badge = '<span class="badge badge-admin">Админ</span>';
       else if (u.is_banned) badge = '<span class="badge badge-banned">Забанен</span>';
-      else badge = '<span class="badge badge-user">Игрок</span>';
+      else badge = `<span class="badge badge-${roleKey}">${roleNames[roleKey]}</span>`;
 
       let actions = '';
       if (!u.is_banned) actions += `<button class="action-btn btn-ban" onclick="banUser('${u.id}')">Бан</button>`;
       else actions += `<button class="action-btn btn-unban" onclick="unbanUser('${u.id}')">Разбан</button>`;
-      if (!u.is_admin) actions += `<button class="action-btn btn-admin" onclick="makeAdmin('${u.id}')">Админ</button>`;
+      if (u.nickname !== 'admin') {
+        actions += `<select class="role-select" onchange="setRole('${u.id}', this.value)">
+          <option value="player" ${roleKey === 'player' ? 'selected' : ''}>Игрок</option>
+          <option value="moderator" ${roleKey === 'moderator' ? 'selected' : ''}>Модератор</option>
+          <option value="super_player" ${roleKey === 'super_player' ? 'selected' : ''}>Сверх игрок</option>
+          <option value="vip" ${roleKey === 'vip' ? 'selected' : ''}>V.I.P</option>
+        </select>`;
+      }
       actions += `<button class="action-btn btn-kick" onclick="kickUser('${u.id}')">Кик</button>`;
       actions += `<button class="action-btn btn-reset" onclick="resetStats('${u.id}')">Сброс</button>`;
       actions += `<button class="action-btn btn-admin" onclick="resetPassword('${u.id}')">Пароль</button>`;
@@ -159,18 +135,26 @@ async function banUser(id) {
   loadUsers();
 }
 
+async function setRole(id, role) {
+  const roleNames = { player: 'Игрок', moderator: 'Модератор', super_player: 'Сверх игрок', vip: 'V.I.P' };
+  if (!confirm(`Назначить роль "${roleNames[role]}"?`)) {
+    loadUsers();
+    return;
+  }
+  await fetch(API + '/users/' + id + '/role', {
+    method: 'POST',
+    headers: { ...headers(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role })
+  });
+  loadUsers();
+}
+
 async function unbanUser(id) {
   await fetch(API + '/users/' + id + '/unban', { method: 'POST', headers: headers() });
   loadUsers();
 }
 
-async function makeAdmin(id) {
-  if (!confirm('Сделать этого пользователя админом?')) return;
-  await fetch(API + '/users/' + id + '/admin', { method: 'POST', headers: headers() });
-  loadUsers();
-}
-
-function kickUser(id) {
+async function kickUser(id) {
   if (!confirm('Кикнуть игрока из игры?')) return;
   adminSocket.emit('admin_kick', { targetUserId: id, userId: currentUser.id });
 }
