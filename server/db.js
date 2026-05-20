@@ -82,7 +82,7 @@ async function mongoQuery(sql, params) {
     const exists = await User.findOne({ nickname: params[0] });
     if (exists) return { rows: [] };
     const user = await User.create({ nickname: params[0], password_hash: params[1], unlocked_plants: [1, 2, 3], avatar: 'рџЊ±', friends: [] });
-    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, avatar: user.avatar || 'рџЊ±', clan: user.clan || '', friends: user.friends || [], unlocked_plants: user.unlocked_plants || [1, 2, 3], unlocked_zombies: user.unlocked_zombies || [1, 2, 3] }] };
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, avatar: user.avatar || 'рџЊ±', clan: user.clan || '', friends: user.friends || [], gifts: user.gifts || [], unlocked_plants: user.unlocked_plants || [1, 2, 3], unlocked_zombies: user.unlocked_zombies || [1, 2, 3] }] };
   }
 
   if (sql.startsWith('SELECT') && sql.includes('users WHERE nickname')) {
@@ -202,6 +202,11 @@ async function mongoQuery(sql, params) {
     return { rows: [] };
   }
 
+  if (sql.includes('UPDATE users SET gifts')) {
+    await User.findByIdAndUpdate(params[1], { gifts: params[0] });
+    return { rows: [] };
+  }
+
   if (sql.includes('SELECT') && sql.includes('FROM users WHERE id')) {
     const user = await User.findById(params[0]);
     if (!user) return { rows: [] };
@@ -223,9 +228,9 @@ function fileQuery(sql, params) {
 
   if (sql.includes('INSERT INTO users')) {
     const id = fileDb.users.length ? Math.max(...fileDb.users.map(u => u.id)) + 1 : 1;
-    fileDb.users.push({ id, nickname: params[0], password_hash: params[1], wins: 0, losses: 0, coins: 0, avatar: '', clan: '', friends: [], friend_requests: [], is_admin: false, is_banned: false, role: 'player', unlocked_plants: [1, 2, 3], unlocked_zombies: [1, 2, 3], created_at: new Date().toISOString() });
+    fileDb.users.push({ id, nickname: params[0], password_hash: params[1], wins: 0, losses: 0, coins: 0, avatar: '', clan: '', friends: [], friend_requests: [], gifts: [], is_admin: false, is_banned: false, role: 'player', unlocked_plants: [1, 2, 3], unlocked_zombies: [1, 2, 3], created_at: new Date().toISOString() });
     saveFileDb();
-    return { rows: [{ id, nickname: params[0], wins: 0, losses: 0, coins: 0, avatar: '', clan: '', friends: [], friend_requests: [], is_admin: false, is_banned: false, role: 'player', unlocked_plants: [1, 2, 3], unlocked_zombies: [1, 2, 3] }] };
+    return { rows: [{ id, nickname: params[0], wins: 0, losses: 0, coins: 0, avatar: '', clan: '', friends: [], friend_requests: [], gifts: [], is_admin: false, is_banned: false, role: 'player', unlocked_plants: [1, 2, 3], unlocked_zombies: [1, 2, 3] }] };
   }
 
   if (sql.includes('INSERT INTO loadouts')) {
@@ -284,6 +289,12 @@ function fileQuery(sql, params) {
   if (sql.includes('UPDATE users SET friend_requests')) {
     const u = fileDb.users.find(u => u.id == params[1]);
     if (u) { u.friend_requests = params[0]; saveFileDb(); }
+    return { rows: [] };
+  }
+
+  if (sql.includes('UPDATE users SET gifts')) {
+    const u = fileDb.users.find(u => u.id == params[1]);
+    if (u) { u.gifts = params[0]; saveFileDb(); }
     return { rows: [] };
   }
 
