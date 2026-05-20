@@ -132,9 +132,6 @@ socket.on('match_found', ({ gameId, role, plantNickname, zombieNickname }) => {
 socket.on('waiting_for_opponent', () => console.log('Waiting...'));
 socket.on('wait_cancelled', () => showScreen('role-select'));
 
-const socket = io();
-let currentRole = null;
-
 window.authReady.then(() => {
   if (currentUser) updateUserInfo();
   else renderAccountSwitcher();
