@@ -206,6 +206,65 @@ body {
 /* USER INFO */
 .user-info { margin-top: 10px; }
 
+.account-switcher {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.account-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.account-chip:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(76, 175, 80, 0.5);
+}
+
+.account-chip.active {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: #4CAF50;
+}
+
+.account-chip .chip-avatar { font-size: 16px; }
+.account-chip .chip-name { font-weight: bold; }
+.account-chip .chip-remove {
+  margin-left: 4px;
+  opacity: 0.5;
+  font-size: 14px;
+  cursor: pointer;
+}
+.account-chip .chip-remove:hover { opacity: 1; color: #f44336; }
+
+.add-account-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: rgba(33,150,243,0.1);
+  border: 1px dashed rgba(33,150,243,0.3);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  color: #2196F3;
+}
+.add-account-chip:hover {
+  background: rgba(33,150,243,0.2);
+  border-color: #2196F3;
+}
+
 .user-card {
   display: flex;
   align-items: center;

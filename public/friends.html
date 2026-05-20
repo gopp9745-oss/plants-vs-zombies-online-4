@@ -70,8 +70,25 @@
     .btn-fight:hover { background: rgba(76,175,80,0.2); }
     .btn-remove { border-color: #f44336; color: #f44336; }
     .btn-remove:hover { background: rgba(244,67,54,0.2); }
-    .btn-add { border-color: #2196F3; color: #2196F3; }
-    .btn-add:hover { background: rgba(33,150,243,0.2); }
+    .btn-add {
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(45deg, #2196F3, #1976D2);
+      color: #fff;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 8px rgba(33,150,243,0.3);
+    }
+    .btn-add:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(33,150,243,0.4);
+    }
+    .btn-add:active {
+      transform: translateY(0);
+    }
     .btn-accept { border-color: #4CAF50; color: #4CAF50; }
     .btn-accept:hover { background: rgba(76,175,80,0.2); }
     .btn-decline { border-color: #f44336; color: #f44336; }

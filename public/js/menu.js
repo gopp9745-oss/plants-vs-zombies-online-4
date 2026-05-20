@@ -13,7 +13,7 @@ function updateUserInfo() {
   if (currentUser && el) {
     const rank = getRank(currentUser.wins || 0);
     const adminBadge = currentUser.is_admin ? '<span class="admin-badge">🛡️ Админ</span>' : '';
-    const avatar = currentUser.avatar || '🌱';
+    const avatar = currentUser.avatar || '';
     const clan = currentUser.clan ? ` <span class="clan-tag">🏰 ${currentUser.clan}</span>` : '';
     el.innerHTML = `
       <div class="user-card">
@@ -25,6 +25,32 @@ function updateUserInfo() {
       </div>
     `;
   }
+  const adminBtn = document.getElementById('admin-menu-btn');
+  if (adminBtn) adminBtn.style.display = currentUser && currentUser.is_admin ? 'block' : 'none';
+  renderAccountSwitcher();
+}
+
+function renderAccountSwitcher() {
+  const container = document.getElementById('account-switcher');
+  if (!container) return;
+  const accounts = getAccounts();
+  if (!accounts.length) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = accounts.map(a => {
+    const isActive = currentUser && a.id === currentUser.id;
+    return `
+      <div class="account-chip ${isActive ? 'active' : ''}" onclick="switchAccount('${a.id}')">
+        <span class="chip-avatar">${a.avatar}</span>
+        <span class="chip-name">${a.nickname}</span>
+        ${!isActive ? `<span class="chip-remove" onclick="event.stopPropagation(); removeAccount('${a.id}'); renderAccountSwitcher();">✕</span>` : ''}
+      </div>
+    `;
+  }).join('') + `<div class="add-account-chip" onclick="logout()">+ Войти</div>`;
+}
+
+window.renderAccountSwitcher = renderAccountSwitcher;
   const adminBtn = document.getElementById('admin-menu-btn');
   if (adminBtn) adminBtn.style.display = currentUser && currentUser.is_admin ? 'block' : 'none';
 }
@@ -110,6 +136,7 @@ socket.on('waiting_for_opponent', () => console.log('Waiting...'));
 socket.on('wait_cancelled', () => showScreen('role-select'));
 
 if (currentUser) updateUserInfo();
+else renderAccountSwitcher();
 
 function openAdminPanel() {
   if (currentUser && currentUser.is_admin) {

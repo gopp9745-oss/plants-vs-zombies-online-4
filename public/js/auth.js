@@ -2,6 +2,36 @@ const API_URL = window.location.origin;
 
 window.currentUser = null;
 
+function getAccounts() {
+  try {
+    return JSON.parse(localStorage.getItem('pvz_accounts') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveAccount(user) {
+  let accounts = getAccounts();
+  accounts = accounts.filter(a => a.id !== user.id);
+  accounts.unshift({ id: user.id, nickname: user.nickname, avatar: user.avatar || '🌱' });
+  if (accounts.length > 3) accounts = accounts.slice(0, 3);
+  localStorage.setItem('pvz_accounts', JSON.stringify(accounts));
+}
+
+function switchAccount(userId) {
+  const accounts = getAccounts();
+  const account = accounts.find(a => a.id === userId);
+  if (!account) return;
+  localStorage.setItem('pvz_user', JSON.stringify(account));
+  window.location.reload();
+}
+
+function removeAccount(userId) {
+  let accounts = getAccounts();
+  accounts = accounts.filter(a => a.id !== userId);
+  localStorage.setItem('pvz_accounts', JSON.stringify(accounts));
+}
+
 async function checkAuth() {
   const user = localStorage.getItem('pvz_user');
   if (user) {
@@ -16,6 +46,7 @@ async function checkAuth() {
         const fresh = await res.json();
         currentUser = fresh;
         localStorage.setItem('pvz_user', JSON.stringify(fresh));
+        saveAccount(fresh);
         if (fresh.is_banned) {
           localStorage.removeItem('pvz_user');
           currentUser = null;
@@ -55,6 +86,7 @@ async function login() {
     if (res.ok) {
       currentUser = data.user;
       localStorage.setItem('pvz_user', JSON.stringify(currentUser));
+      saveAccount(currentUser);
       window.location.href = '/';
     } else {
       showMessage(data.error, 'error');
@@ -110,6 +142,7 @@ async function register() {
         if (loginRes.ok) {
           currentUser = loginData.user;
           localStorage.setItem('pvz_user', JSON.stringify(currentUser));
+          saveAccount(currentUser);
           window.location.href = '/';
         }
       }, 1000);

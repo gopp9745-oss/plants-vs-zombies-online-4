@@ -146,16 +146,21 @@ router.post('/remove/:userId', async (req, res) => {
 router.post('/search/partial', async (req, res) => {
   try {
     const { query: q } = req.body;
+    console.log('[FRIENDS PARTIAL] searching for:', q);
     if (!q || q.length < 2) return res.json([]);
     
     const allResult = await query('SELECT * FROM users ORDER BY wins DESC');
+    console.log('[FRIENDS PARTIAL] got', allResult.rows.length, 'users from DB');
+    
     const matches = (allResult.rows || []).filter(u => {
       const nick = (u.nickname || '').toLowerCase();
       const search = q.toLowerCase();
       return nick.includes(search);
     }).slice(0, 5);
     
-    res.json(matches.map(u => ({ id: u.id, nickname: u.nickname, avatar: u.avatar || '', clan: u.clan || '', wins: u.wins, losses: u.losses })));
+    console.log('[FRIENDS PARTIAL] found', matches.length, 'matches');
+    
+    res.json(matches.map(u => ({ id: u.id, nickname: u.nickname, avatar: u.avatar || '🌱', clan: u.clan || '', wins: u.wins, losses: u.losses })));
   } catch (err) {
     console.error('[FRIENDS PARTIAL] error:', err.message);
     res.status(500).json({ error: err.message });
