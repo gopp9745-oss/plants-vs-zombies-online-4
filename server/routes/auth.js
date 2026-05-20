@@ -109,7 +109,7 @@ router.post('/refresh', async (req, res) => {
       wins: u.wins,
       losses: u.losses,
       coins: u.coins || 0,
-      avatar: u.avatar || '🌱',
+      avatar: u.avatar || '',
       clan: u.clan || '',
       friends: u.friends || [],
       is_admin: u.is_admin || false,
@@ -118,6 +118,18 @@ router.post('/refresh', async (req, res) => {
       unlocked_zombies: u.unlocked_zombies || [1, 2, 3],
       role: u.role || 'player'
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/gifts/me', async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    const result = await query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json({ gifts: result.rows[0].gifts || [], coins: result.rows[0].coins || 0 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,22 +1,22 @@
-const API = window.location.origin + '/api/admin';
+const API = window.location.origin + '/api/auth';
 
 async function loadGifts() {
   if (!currentUser) return;
   try {
-    const res = await fetch(API + '/gifts/' + currentUser.id, {
+    const res = await fetch(API + '/gifts/me', {
       headers: { 'x-user-id': currentUser.id }
     });
     const data = await res.json();
     const list = document.getElementById('gifts-list');
 
     if (!data.gifts || data.gifts.length === 0) {
-      list.innerHTML = '<div class="empty-msg">Пока нет подарков </div>';
+      list.innerHTML = '<div class="empty-msg">Пока нет подарков 🎁</div>';
       return;
     }
 
     list.innerHTML = '';
-    const typeIcons = { coins: '🪙', plant: '🌱', zombie: '', box: '🎁', role: '👑' };
-    const typeNames = { coins: 'монеты', plant: 'растение', zombie: 'зомби', box: 'бокс', role: 'роль' };
+    const typeIcons = { coins: '🪙', plant: '🌱', zombie: '🧟', box: '🎁', role: '👑' };
+    const typeNames = { coins: 'Монеты', plant: 'Растение', zombie: 'Зомби', box: 'Бокс', role: 'Роль' };
     const roleNames = { player: 'Игрок', moderator: 'Модератор', super_player: 'Сверх игрок', vip: 'V.I.P' };
 
     [...data.gifts].reverse().forEach(g => {

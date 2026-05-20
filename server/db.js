@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
   is_admin: { type: Boolean, default: false },
   is_banned: { type: Boolean, default: false },
   role: { type: String, default: 'player', enum: ['player', 'moderator', 'super_player', 'vip'] },
-  gifts: { type: Array, default: [] },
+  gifts: { type: [mongoose.Schema.Types.Mixed], default: [] },
   unlocked_plants: { type: [Number], default: [1, 2, 3] },
   unlocked_zombies: { type: [Number], default: [1, 2, 3] }
 }, { timestamps: true });

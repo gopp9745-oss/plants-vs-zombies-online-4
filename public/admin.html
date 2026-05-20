@@ -346,17 +346,22 @@
         <select id="gift-user" class="gift-select">
           <option value="">Выберите игрока</option>
         </select>
-        <select id="gift-type" class="gift-select">
+        <select id="gift-type" class="gift-select" onchange="onGiftTypeChange()">
           <option value="coins">🪙 Монеты</option>
           <option value="plant">🌱 Растение</option>
           <option value="zombie">🧟 Зомби</option>
-          <option value="box">🎁 Бокс</option>
-          <option value="role"> Роль</option>
+          <option value="box"> Бокс</option>
+          <option value="role">👑 Роль</option>
         </select>
-        <input type="number" id="gift-amount" class="gift-input" placeholder="Кол-во / ID" />
+        <div id="gift-item-wrapper" style="display:none;">
+          <select id="gift-item-select" class="gift-select">
+            <option value="">Выберите...</option>
+          </select>
+        </div>
+        <input type="number" id="gift-amount" class="gift-input" placeholder="Кол-во" />
         <input type="text" id="gift-message" class="gift-input" placeholder="Сообщение (необязательно)" />
         <button class="gift-btn" onclick="sendGift()">🎁 Отправить</button>
-        <button class="gift-btn gift-all-btn" onclick="sendGiftAll()">🎁🎁 Подарок всем</button>
+        <button class="gift-btn gift-all-btn" onclick="sendGiftAll()">🎁 Подарок всем</button>
       </div>
       <div id="gift-result"></div>
     </div>

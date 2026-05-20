@@ -47,6 +47,8 @@ function showDashboard() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').classList.add('active');
   loadGiftUsers();
+  loadShopItems();
+  onGiftTypeChange();
 }
 
 async function loadUsers() {
@@ -206,6 +208,193 @@ async function loadGiftUsers() {
         opt.textContent = `${u.nickname} (${u.coins || 0} 🪙)`;
         select.appendChild(opt);
       }
+    });
+  } catch (e) {
+    console.error('Failed to load users for gifts:', e);
+  }
+}
+
+let shopItems = { plants: [], zombies: [], boxes: [] };
+
+async function loadShopItems() {
+  try {
+    const [plantsRes, zombiesRes, boxesRes] = await Promise.all([
+      fetch(window.location.origin + '/api/shop/plants'),
+      fetch(window.location.origin + '/api/shop/zombies'),
+      fetch(window.location.origin + '/api/shop/boxes')
+    ]);
+    shopItems.plants = await plantsRes.json();
+    shopItems.zombies = await zombiesRes.json();
+    shopItems.boxes = await boxesRes.json();
+  } catch (e) {
+    console.error('Failed to load shop items:', e);
+  }
+}
+
+function onGiftTypeChange() {
+  const type = document.getElementById('gift-type').value;
+  const wrapper = document.getElementById('gift-item-wrapper');
+  const itemSelect = document.getElementById('gift-item-select');
+  const amountInput = document.getElementById('gift-amount');
+
+  itemSelect.innerHTML = '<option value="">Выберите...</option>';
+
+  if (type === 'box') {
+    wrapper.style.display = 'block';
+    amountInput.style.display = 'none';
+    shopItems.boxes.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      opt.textContent = `${b.emoji} ${b.name} (${b.price})`;
+      itemSelect.appendChild(opt);
+    });
+  } else if (type === 'role') {
+    wrapper.style.display = 'block';
+    amountInput.style.display = 'none';
+    const roles = [
+      { id: 'player', name: 'Игрок' },
+      { id: 'moderator', name: 'Модератор' },
+      { id: 'super_player', name: 'Сверх игрок' },
+      { id: 'vip', name: 'V.I.P' }
+    ];
+    roles.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      opt.textContent = r.name;
+      itemSelect.appendChild(opt);
+    });
+  } else if (type === 'plant') {
+    wrapper.style.display = 'block';
+    amountInput.style.display = 'none';
+    shopItems.plants.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.emoji} ${p.name}`;
+      itemSelect.appendChild(opt);
+    });
+  } else if (type === 'zombie') {
+    wrapper.style.display = 'block';
+    amountInput.style.display = 'none';
+    shopItems.zombies.forEach(z => {
+      const opt = document.createElement('option');
+      opt.value = z.id;
+      opt.textContent = `${z.emoji} ${z.name}`;
+      itemSelect.appendChild(opt);
+    });
+  } else {
+    wrapper.style.display = 'none';
+    amountInput.style.display = 'block';
+  }
+}
+
+async function sendGift() {
+  const userId = document.getElementById('gift-user').value;
+  const type = document.getElementById('gift-type').value;
+  const amount = parseInt(document.getElementById('gift-amount').value) || 0;
+  const itemId = document.getElementById('gift-item-select').value;
+  const message = document.getElementById('gift-message').value.trim();
+  const resultEl = document.getElementById('gift-result');
+
+  if (!userId) {
+    resultEl.className = 'error';
+    resultEl.textContent = 'Выберите игрока';
+    return;
+  }
+
+  let finalItemId = null;
+  let finalAmount = 0;
+
+  if (type === 'coins') {
+    if (amount <= 0) {
+      resultEl.className = 'error';
+      resultEl.textContent = 'Укажите количество монет';
+      return;
+    }
+    finalAmount = amount;
+  } else {
+    if (!itemId) {
+      resultEl.className = 'error';
+      resultEl.textContent = 'Выберите предмет';
+      return;
+    }
+    finalItemId = type === 'role' ? itemId : parseInt(itemId);
+  }
+
+  try {
+    const res = await fetch(API + '/gift/' + userId, {
+      method: 'POST',
+      headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, amount: finalAmount, itemId: finalItemId, message })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      resultEl.className = 'success';
+      resultEl.textContent = '✅ ' + data.message;
+      document.getElementById('gift-amount').value = '';
+      document.getElementById('gift-message').value = '';
+      loadUsers();
+      loadGiftUsers();
+    } else {
+      resultEl.className = 'error';
+      resultEl.textContent = '❌ ' + data.error;
+    }
+  } catch (e) {
+    resultEl.className = 'error';
+    resultEl.textContent = '❌ Ошибка подключения';
+  }
+}
+
+async function sendGiftAll() {
+  const type = document.getElementById('gift-type').value;
+  const amount = parseInt(document.getElementById('gift-amount').value) || 0;
+  const itemId = document.getElementById('gift-item-select').value;
+  const message = document.getElementById('gift-message').value.trim();
+  const resultEl = document.getElementById('gift-result');
+
+  let finalItemId = null;
+  let finalAmount = 0;
+
+  if (type === 'coins') {
+    if (amount <= 0) {
+      resultEl.className = 'error';
+      resultEl.textContent = 'Укажите количество монет';
+      return;
+    }
+    finalAmount = amount;
+  } else {
+    if (!itemId) {
+      resultEl.className = 'error';
+      resultEl.textContent = 'Выберите предмет';
+      return;
+    }
+    finalItemId = type === 'role' ? itemId : parseInt(itemId);
+  }
+
+  if (!confirm(`Отправить подарок всем игрокам? (${type})`)) return;
+
+  try {
+    const res = await fetch(API + '/gift-all', {
+      method: 'POST',
+      headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, amount: finalAmount, itemId: finalItemId, message })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      resultEl.className = 'success';
+      resultEl.textContent = '✅ ' + data.message;
+      document.getElementById('gift-amount').value = '';
+      document.getElementById('gift-message').value = '';
+      loadUsers();
+      loadGiftUsers();
+    } else {
+      resultEl.className = 'error';
+      resultEl.textContent = '❌ ' + data.error;
+    }
+  } catch (e) {
+    resultEl.className = 'error';
+    resultEl.textContent = '❌ Ошибка подключения';
+  }
+}
     });
   } catch (e) {
     console.error('Failed to load users for gifts:', e);
