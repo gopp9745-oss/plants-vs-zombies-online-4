@@ -395,106 +395,11 @@ async function sendGiftAll() {
     resultEl.textContent = '❌ Ошибка подключения';
   }
 }
-    });
-  } catch (e) {
-    console.error('Failed to load users for gifts:', e);
-  }
-}
-
-async function sendGift() {
-  const userId = document.getElementById('gift-user').value;
-  const type = document.getElementById('gift-type').value;
-  const amount = parseInt(document.getElementById('gift-amount').value) || 0;
-  const message = document.getElementById('gift-message').value.trim();
-  const resultEl = document.getElementById('gift-result');
-
-  if (!userId) {
-    resultEl.className = 'error';
-    resultEl.textContent = 'Выберите игрока';
-    return;
-  }
-  if (type === 'coins' && amount <= 0) {
-    resultEl.className = 'error';
-    resultEl.textContent = 'Укажите количество монет';
-    return;
-  }
-  if ((type === 'plant' || type === 'zombie' || type === 'role') && amount <= 0) {
-    resultEl.className = 'error';
-    resultEl.textContent = 'Укажите ID';
-    return;
-  }
-
-  try {
-    const res = await fetch(API + '/gift/' + userId, {
-      method: 'POST',
-      headers: { ...headers(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, amount, itemId: amount, message })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      resultEl.className = 'success';
-      resultEl.textContent = '✅ ' + data.message;
-      document.getElementById('gift-amount').value = '';
-      document.getElementById('gift-message').value = '';
-      loadUsers();
-      loadGiftUsers();
-    } else {
-      resultEl.className = 'error';
-      resultEl.textContent = '❌ ' + data.error;
-    }
-  } catch (e) {
-    resultEl.className = 'error';
-    resultEl.textContent = '❌ Ошибка подключения';
-  }
-}
 
 function quickGift(userId, nickname) {
   document.getElementById('gift-user').value = userId;
   document.querySelector('.gifts-section').scrollIntoView({ behavior: 'smooth' });
   showToast('Выбран: ' + nickname);
-}
-
-async function sendGiftAll() {
-  const type = document.getElementById('gift-type').value;
-  const amount = parseInt(document.getElementById('gift-amount').value) || 0;
-  const message = document.getElementById('gift-message').value.trim();
-  const resultEl = document.getElementById('gift-result');
-
-  if (type === 'coins' && amount <= 0) {
-    resultEl.className = 'error';
-    resultEl.textContent = 'Укажите количество монет';
-    return;
-  }
-  if ((type === 'plant' || type === 'zombie' || type === 'role') && amount <= 0) {
-    resultEl.className = 'error';
-    resultEl.textContent = 'Укажите ID';
-    return;
-  }
-
-  if (!confirm(`Отправить подарок всем игрокам? (${type})`)) return;
-
-  try {
-    const res = await fetch(API + '/gift-all', {
-      method: 'POST',
-      headers: { ...headers(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, amount, itemId: amount, message })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      resultEl.className = 'success';
-      resultEl.textContent = '✅ ' + data.message;
-      document.getElementById('gift-amount').value = '';
-      document.getElementById('gift-message').value = '';
-      loadUsers();
-      loadGiftUsers();
-    } else {
-      resultEl.className = 'error';
-      resultEl.textContent = '❌ ' + data.error;
-    }
-  } catch (e) {
-    resultEl.className = 'error';
-    resultEl.textContent = '❌ Ошибка подключения';
-  }
 }
 
 function showToast(msg) {
