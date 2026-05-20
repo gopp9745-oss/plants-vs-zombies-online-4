@@ -70,6 +70,24 @@ router.post('/remove/:userId', async (req, res) => {
   }
 });
 
+router.post('/search/partial', async (req, res) => {
+  try {
+    const { query: q } = req.body;
+    if (!q || q.length < 2) return res.json([]);
+    const result = await query('SELECT * FROM users WHERE nickname = $1', [q]);
+    if (result.rows.length > 0) {
+      const u = result.rows[0];
+      return res.json([{ id: u.id, nickname: u.nickname, avatar: u.avatar || '🌱', clan: u.clan || '', wins: u.wins, losses: u.losses }]);
+    }
+    const allResult = await query('SELECT * FROM users ORDER BY wins DESC');
+    const matches = (allResult.rows || []).filter(u => u.nickname.toLowerCase().includes(q.toLowerCase())).slice(0, 5);
+    res.json(matches.map(u => ({ id: u.id, nickname: u.nickname, avatar: u.avatar || '🌱', clan: u.clan || '', wins: u.wins, losses: u.losses })));
+  } catch (err) {
+    console.error('[FRIENDS PARTIAL] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/search', async (req, res) => {
   try {
     const { nickname } = req.body;

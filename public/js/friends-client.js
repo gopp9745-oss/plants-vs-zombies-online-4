@@ -48,6 +48,10 @@ async function searchPartial(q) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: q })
     });
+    if (!res.ok) {
+      console.error('Partial search HTTP error:', res.status);
+      return;
+    }
     const suggestions = await res.json();
     const container = document.getElementById('search-suggestions');
     if (!suggestions.length) {
@@ -104,10 +108,10 @@ async function searchPlayer() {
       searchResult = data;
       showSearchResult(data);
     } else {
-      document.getElementById('search-result').innerHTML = `<div class="empty-msg">❌ ${data.error}</div>`;
+      document.getElementById('search-result').innerHTML = `<div class="empty-msg">❌ ${data.error || 'Не найден'}</div>`;
     }
   } catch (err) {
-    showToast('❌ Ошибка');
+    showToast('❌ ' + (err.message || 'Ошибка сети'));
   }
 }
 
