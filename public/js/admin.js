@@ -2,16 +2,7 @@ const API = window.location.origin + '/api/admin';
 const adminSocket = io();
 let adminToken = localStorage.getItem('adminToken');
 
-const savedUser = localStorage.getItem('pvz_user');
-const user = savedUser ? JSON.parse(savedUser) : null;
-
-if (user && user.is_admin) {
-  adminToken = 'admin_auto';
-  localStorage.setItem('adminToken', adminToken);
-  showDashboard();
-  loadUsers();
-  loadGames();
-} else if (adminToken) {
+if (adminToken) {
   showDashboard();
   loadUsers();
   loadGames();
