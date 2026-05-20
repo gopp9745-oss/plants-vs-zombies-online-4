@@ -73,8 +73,7 @@ function headers() {
 }
 
 function logout() {
-  localStorage.removeItem('pvz_user');
-  window.location.href = '/login.html';
+  window.location.href = '/';
 }
 
 function showDashboard() {
