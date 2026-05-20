@@ -21,6 +21,19 @@ router.get('/verify', authMiddleware, (req, res) => {
   res.json({ success: true, user: { id: req.adminUser.id, nickname: req.adminUser.nickname } });
 });
 
+router.post('/setup-first-admin', async (req, res) => {
+  try {
+    const admins = await query('SELECT * FROM users WHERE is_admin = $1', [1]);
+    if (admins.rows.length > 0) return res.status(400).json({ error: 'Admin already exists' });
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    await query('UPDATE users SET is_admin = $1 WHERE id = $2', [1, userId]);
+    res.json({ message: 'First admin created' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
     const users = await query('SELECT COUNT(*) FROM users');

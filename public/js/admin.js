@@ -4,12 +4,49 @@ const adminSocket = io();
 const savedUser = localStorage.getItem('pvz_user');
 const currentUser = savedUser ? JSON.parse(savedUser) : null;
 
-if (!currentUser || !currentUser.is_admin) {
+if (!currentUser) {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('dashboard').classList.remove('active');
+  document.getElementById('login-error').textContent = 'Сначала войдите в аккаунт';
+} else if (!currentUser.is_admin) {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('dashboard').classList.remove('active');
   document.getElementById('login-error').textContent = 'У вас нет прав администратора';
+  checkIfFirstAdmin();
 } else {
   verifyAdmin();
+}
+
+async function checkIfFirstAdmin() {
+  try {
+    const res = await fetch(API + '/setup-first-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id })
+    });
+    if (res.ok) {
+      document.getElementById('setup-admin-btn').style.display = 'block';
+      document.getElementById('login-error').textContent = 'В системе нет админов. Нажмите кнопку чтобы стать первым.';
+    }
+  } catch (e) {}
+}
+
+async function setupFirstAdmin() {
+  try {
+    const res = await fetch(API + '/setup-first-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      location.reload();
+    } else {
+      document.getElementById('login-error').textContent = data.error;
+    }
+  } catch (e) {
+    document.getElementById('login-error').textContent = 'Ошибка';
+  }
 }
 
 async function verifyAdmin() {

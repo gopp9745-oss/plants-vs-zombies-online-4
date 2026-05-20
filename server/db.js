@@ -202,7 +202,12 @@ async function mongoQuery(sql, params) {
   if (sql.includes('SELECT') && sql.includes('FROM users WHERE id')) {
     const user = await User.findById(params[0]);
     if (!user) return { rows: [] };
-    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, avatar: user.avatar || '🌱', clan: user.clan || '', is_admin: user.is_admin || false, is_banned: user.is_banned || false, unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, avatar: user.avatar || '🌱', clan: user.clan || '', friends: user.friends || [], friend_requests: user.friend_requests || [], is_admin: user.is_admin || false, is_banned: user.is_banned || false, unlocked_plants: user.unlocked_plants || [1, 2, 3] }] };
+  }
+
+  if (sql.includes('SELECT') && sql.includes('FROM users WHERE is_admin')) {
+    const users = await User.find({ is_admin: params[0] }).lean();
+    return { rows: users.map(u => ({ id: u._id.toString(), nickname: u.nickname, is_admin: u.is_admin || false })) };
   }
 
   return { rows: [] };
@@ -233,6 +238,10 @@ function fileQuery(sql, params) {
 
   if (sql.includes('FROM users WHERE id')) {
     return { rows: fileDb.users.filter(u => u.id == params[0]) };
+  }
+
+  if (sql.includes('FROM users WHERE is_admin')) {
+    return { rows: fileDb.users.filter(u => u.is_admin == params[0]).map(u => ({ id: u.id, nickname: u.nickname, is_admin: u.is_admin || false })) };
   }
 
   if (sql.includes('UPDATE users SET unlocked_plants')) {
