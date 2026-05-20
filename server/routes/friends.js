@@ -168,18 +168,20 @@ router.post('/search/partial', async (req, res) => {
 });
 
 router.post('/search', async (req, res) => {
+  console.log('[FRIENDS SEARCH ROUTE HIT]');
   try {
     const { nickname } = req.body;
     console.log('[FRIENDS SEARCH] searching for:', nickname);
     if (!nickname) return res.status(400).json({ error: 'nickname required' });
     
     const allResult = await query('SELECT * FROM users ORDER BY wins DESC');
+    console.log('[FRIENDS SEARCH] total users:', allResult.rows.length);
     const found = (allResult.rows || []).find(u => u.nickname.toLowerCase() === nickname.toLowerCase());
     
     if (!found) return res.status(404).json({ error: 'User not found' });
     
     console.log('[FRIENDS SEARCH] found:', found.nickname);
-    res.json({ id: found.id, nickname: found.nickname, avatar: found.avatar || '', clan: found.clan || '', wins: found.wins, losses: found.losses });
+    res.json({ id: found.id, nickname: found.nickname, avatar: found.avatar || '🌱', clan: found.clan || '', wins: found.wins, losses: found.losses });
   } catch (err) {
     console.error('[FRIENDS SEARCH] error:', err.message, err.stack);
     res.status(500).json({ error: err.message });
