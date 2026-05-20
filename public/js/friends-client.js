@@ -26,7 +26,7 @@ async function loadFriends() {
           <div class="friend-stats">🏆 ${f.wins} / 💀 ${f.losses}</div>
         </div>
         <div class="friend-actions">
-          <button class="friend-btn btn-fight" onclick="startFriendly('${f.id}', '${f.nickname.replace(/'/g, "\\'")}')">⚔️ Бой</button>
+          <button class="friend-btn btn-fight" onclick="startFriendly('${f.id}', '${f.nickname.replace(/'/g, "\\'")}')">️ Бой</button>
           <button class="friend-btn btn-remove" onclick="removeFriend('${f.id}')">✕</button>
         </div>
       `;
@@ -43,16 +43,19 @@ async function searchPartial(q) {
     return;
   }
   try {
+    console.log('[PARTIAL] searching for:', q);
     const res = await fetch(API + '/search/partial', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: q })
     });
+    console.log('[PARTIAL] response status:', res.status);
     if (!res.ok) {
       console.error('Partial search HTTP error:', res.status);
       return;
     }
     const suggestions = await res.json();
+    console.log('[PARTIAL] suggestions:', suggestions.length);
     const container = document.getElementById('search-suggestions');
     if (!suggestions.length) {
       container.innerHTML = '';
@@ -86,7 +89,7 @@ function showSearchResult(data) {
       <div class="friend-avatar">${data.avatar}</div>
       <div class="friend-info">
         <div class="friend-name">${data.nickname}</div>
-        <div class="friend-clan">🏰 ${data.clan || 'Без клана'}</div>
+        <div class="friend-clan"> ${data.clan || 'Без клана'}</div>
       </div>
       <button class="friend-btn btn-add" onclick="addFriend('${data.id}')">➕ Добавить</button>
     </div>
@@ -114,25 +117,6 @@ async function searchPlayer() {
     showToast('❌ ' + (err.message || 'Ошибка сети'));
   }
 }
-
-document.getElementById('search-input').addEventListener('input', (e) => {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => searchPartial(e.target.value.trim()), 300);
-});
-
-document.getElementById('search-input').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    clearTimeout(searchTimeout);
-    document.getElementById('search-suggestions').innerHTML = '';
-    searchPlayer();
-  }
-});
-
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.search-group') && !e.target.closest('.suggestions-dropdown')) {
-    document.getElementById('search-suggestions').innerHTML = '';
-  }
-});
 
 async function addFriend(friendId) {
   try {
@@ -183,4 +167,39 @@ function showToast(msg) {
   setTimeout(() => toast.remove(), 3000);
 }
 
-loadFriends();
+function initFriendsPage() {
+  const input = document.getElementById('search-input');
+  if (!input) {
+    console.error('search-input not found');
+    return;
+  }
+  console.log('Friends page initialized');
+
+  input.addEventListener('input', (e) => {
+    console.log('Input event, value:', e.target.value);
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => searchPartial(e.target.value.trim()), 300);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      clearTimeout(searchTimeout);
+      document.getElementById('search-suggestions').innerHTML = '';
+      searchPlayer();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-group') && !e.target.closest('.suggestions-dropdown')) {
+      document.getElementById('search-suggestions').innerHTML = '';
+    }
+  });
+
+  loadFriends();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initFriendsPage);
+} else {
+  initFriendsPage();
+}
