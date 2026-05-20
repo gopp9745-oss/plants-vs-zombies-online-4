@@ -51,9 +51,6 @@ function renderAccountSwitcher() {
 }
 
 window.renderAccountSwitcher = renderAccountSwitcher;
-  const adminBtn = document.getElementById('admin-menu-btn');
-  if (adminBtn) adminBtn.style.display = currentUser && currentUser.is_admin ? 'block' : 'none';
-}
 
 async function showInventory() {
   showScreen('inventory');
