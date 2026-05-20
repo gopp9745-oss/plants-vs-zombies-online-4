@@ -1,6 +1,7 @@
 const API_URL = window.location.origin;
 
 window.currentUser = null;
+window.authReady = new Promise(resolve => { window.authResolve = resolve; });
 
 function getAccounts() {
   try {
@@ -13,7 +14,7 @@ function getAccounts() {
 function saveAccount(user) {
   let accounts = getAccounts();
   accounts = accounts.filter(a => a.id !== user.id);
-  accounts.unshift({ id: user.id, nickname: user.nickname, avatar: user.avatar || '🌱' });
+  accounts.unshift({ id: user.id, nickname: user.nickname, avatar: user.avatar || '' });
   if (accounts.length > 3) accounts = accounts.slice(0, 3);
   localStorage.setItem('pvz_accounts', JSON.stringify(accounts));
 }
@@ -23,7 +24,7 @@ function switchAccount(userId) {
   const account = accounts.find(a => a.id === userId);
   if (!account) return;
   localStorage.setItem('pvz_user', JSON.stringify(account));
-  window.location.reload();
+  window.location.href = '/';
 }
 
 function removeAccount(userId) {
@@ -60,7 +61,9 @@ async function checkAuth() {
     }
   } else if (!window.location.pathname.includes('login.html')) {
     window.location.href = '/login.html';
+    return;
   }
+  if (window.authResolve) window.authResolve();
 }
 
 checkAuth();

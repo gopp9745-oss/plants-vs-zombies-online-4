@@ -18,18 +18,31 @@ async function loadFriends() {
     friends.forEach(f => {
       const div = document.createElement('div');
       div.className = 'friend-card';
-      div.innerHTML = `
-        <div class="friend-avatar">${f.avatar}</div>
-        <div class="friend-info">
-          <div class="friend-name">${f.nickname}</div>
-          <div class="friend-clan">🏰 ${f.clan || 'Без клана'}</div>
-          <div class="friend-stats">🏆 ${f.wins} / 💀 ${f.losses}</div>
-        </div>
-        <div class="friend-actions">
-          <button class="friend-btn btn-fight" onclick="startFriendly('${f.id}', '${f.nickname.replace(/'/g, "\\'")}')">️ Бой</button>
-          <button class="friend-btn btn-remove" onclick="removeFriend('${f.id}')">✕</button>
-        </div>
-      `;
+      if (f.is_banned) {
+        div.innerHTML = `
+          <div class="friend-avatar banned">✕</div>
+          <div class="friend-info">
+            <div class="friend-name">${f.nickname}</div>
+            <div class="friend-clan" style="color:#f44336;">🚫 Заблокирован</div>
+          </div>
+          <div class="friend-actions">
+            <button class="friend-btn btn-remove" onclick="removeFriend('${f.id}')">✕</button>
+          </div>
+        `;
+      } else {
+        div.innerHTML = `
+          <div class="friend-avatar">${f.avatar}</div>
+          <div class="friend-info">
+            <div class="friend-name">${f.nickname}</div>
+            <div class="friend-clan">🏰 ${f.clan || 'Без клана'}</div>
+            <div class="friend-stats">🏆 ${f.wins} / 💀 ${f.losses}</div>
+          </div>
+          <div class="friend-actions">
+            <button class="friend-btn btn-fight" onclick="startFriendly('${f.id}', '${f.nickname.replace(/'/g, "\\'")}')">️ Бой</button>
+            <button class="friend-btn btn-remove" onclick="removeFriend('${f.id}')">✕</button>
+          </div>
+        `;
+      }
       list.appendChild(div);
     });
   } catch (err) {

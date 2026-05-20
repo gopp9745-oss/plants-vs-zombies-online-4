@@ -25,8 +25,10 @@ async function loadInventory() {
       ];
     }
     
-    const unlocked = currentUser.unlocked_plants || [1, 2, 3];
-    itemsData.plants = itemsData.plants.filter(p => unlocked.includes(p.id));
+    const unlockedPlants = currentUser.unlocked_plants || [1, 2, 3];
+    const unlockedZombies = currentUser.unlocked_zombies || [1, 2, 3];
+    itemsData.plants = itemsData.plants.filter(p => unlockedPlants.includes(p.id));
+    itemsData.zombies = itemsData.zombies.filter(z => unlockedZombies.includes(z.id));
     
     renderItems();
     renderLoadout();

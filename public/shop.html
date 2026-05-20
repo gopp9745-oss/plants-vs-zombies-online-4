@@ -108,15 +108,48 @@
       animation: fadeIn 0.3s;
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+    .shop-tabs {
+      display: flex;
+      gap: 10px;
+      padding: 15px 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .shop-tabs .tab-btn {
+      padding: 10px 24px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      background: transparent;
+      color: #888;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .shop-tabs .tab-btn.active {
+      border-color: #FFD700;
+      background: rgba(255,215,0,0.1);
+      color: #FFD700;
+    }
+    .shop-tabs .tab-btn:hover { border-color: rgba(255,215,0,0.5); }
+    .box-common { border-color: rgba(255,255,255,0.2) !important; }
+    .box-rare { border-color: rgba(33,150,243,0.4) !important; background: rgba(33,150,243,0.05) !important; }
+    .box-legendary { border-color: rgba(255,215,0,0.4) !important; background: rgba(255,215,0,0.05) !important; }
   </style>
 </head>
 <body>
   <div class="shop-header">
-    <h1>🛒 Магазин растений</h1>
+    <h1>🛒 Магазин</h1>
     <div class="coins-display">
-      <span>🪙</span>
+      <span></span>
       <span id="coins-count">0</span>
     </div>
+  </div>
+
+  <div class="shop-tabs">
+    <button class="tab-btn active" data-tab="plants" onclick="switchTab('plants')"> Растения</button>
+    <button class="tab-btn" data-tab="zombies" onclick="switchTab('zombies')"> Зомби</button>
+    <button class="tab-btn" data-tab="boxes" onclick="switchTab('boxes')">🎁 Боксы</button>
   </div>
 
   <div class="shop-grid" id="shop-grid"></div>

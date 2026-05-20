@@ -85,7 +85,8 @@ router.post('/login', async (req, res) => {
         friends: user.friends || [],
         is_admin: user.is_admin || false,
         is_banned: user.is_banned || false,
-        unlocked_plants: user.unlocked_plants || [1, 2, 3]
+        unlocked_plants: user.unlocked_plants || [1, 2, 3],
+        unlocked_zombies: user.unlocked_zombies || [1, 2, 3]
       }
     });
   } catch (err) {
@@ -112,7 +113,8 @@ router.post('/refresh', async (req, res) => {
       friends: u.friends || [],
       is_admin: u.is_admin || false,
       is_banned: u.is_banned || false,
-      unlocked_plants: u.unlocked_plants || [1, 2, 3]
+      unlocked_plants: u.unlocked_plants || [1, 2, 3],
+      unlocked_zombies: u.unlocked_zombies || [1, 2, 3]
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

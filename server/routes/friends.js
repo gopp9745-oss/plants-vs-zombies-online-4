@@ -14,7 +14,7 @@ router.get('/list/:userId', async (req, res) => {
       const fr = await query('SELECT * FROM users WHERE id = $1', [fid]);
       if (fr.rows.length > 0) {
         const f = fr.rows[0];
-        friends.push({ id: f.id, nickname: f.nickname, avatar: f.avatar || '', clan: f.clan || '', wins: f.wins, losses: f.losses });
+        friends.push({ id: f.id, nickname: f.nickname, avatar: f.avatar || '', clan: f.clan || '', wins: f.wins, losses: f.losses, is_banned: f.is_banned || false });
       }
     }
     res.json(friends);

@@ -132,8 +132,13 @@ socket.on('match_found', ({ gameId, role, plantNickname, zombieNickname }) => {
 socket.on('waiting_for_opponent', () => console.log('Waiting...'));
 socket.on('wait_cancelled', () => showScreen('role-select'));
 
-if (currentUser) updateUserInfo();
-else renderAccountSwitcher();
+const socket = io();
+let currentRole = null;
+
+window.authReady.then(() => {
+  if (currentUser) updateUserInfo();
+  else renderAccountSwitcher();
+});
 
 function openAdminPanel() {
   if (currentUser && currentUser.is_admin) {
