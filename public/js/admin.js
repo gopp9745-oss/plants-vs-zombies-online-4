@@ -46,6 +46,7 @@ function logout() {
 function showDashboard() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').classList.add('active');
+  loadGiftUsers();
 }
 
 async function loadUsers() {
@@ -84,6 +85,7 @@ async function loadUsers() {
       actions += `<button class="action-btn btn-kick" onclick="kickUser('${u.id}')">Кик</button>`;
       actions += `<button class="action-btn btn-reset" onclick="resetStats('${u.id}')">Сброс</button>`;
       actions += `<button class="action-btn btn-admin" onclick="resetPassword('${u.id}')">Пароль</button>`;
+      actions += `<button class="action-btn btn-gift" onclick="quickGift('${u.id}', '${u.nickname.replace(/'/g, "\\'")}')">🎁</button>`;
       actions += `<button class="action-btn btn-delete" onclick="deleteUser('${u.id}')">Удалить</button>`;
 
       tr.innerHTML = `
@@ -189,4 +191,84 @@ async function resetPassword(id) {
   if (data.newPassword) {
     alert('Новый пароль: ' + data.newPassword);
   }
+}
+
+async function loadGiftUsers() {
+  try {
+    const res = await fetch(API + '/users', { headers: headers() });
+    const users = await res.json();
+    const select = document.getElementById('gift-user');
+    select.innerHTML = '<option value="">Выберите игрока</option>';
+    users.forEach(u => {
+      if (u.nickname !== 'admin') {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = `${u.nickname} (${u.coins || 0} 🪙)`;
+        select.appendChild(opt);
+      }
+    });
+  } catch (e) {
+    console.error('Failed to load users for gifts:', e);
+  }
+}
+
+async function sendGift() {
+  const userId = document.getElementById('gift-user').value;
+  const type = document.getElementById('gift-type').value;
+  const amount = parseInt(document.getElementById('gift-amount').value) || 0;
+  const message = document.getElementById('gift-message').value.trim();
+  const resultEl = document.getElementById('gift-result');
+
+  if (!userId) {
+    resultEl.className = 'error';
+    resultEl.textContent = 'Выберите игрока';
+    return;
+  }
+  if (type === 'coins' && amount <= 0) {
+    resultEl.className = 'error';
+    resultEl.textContent = 'Укажите количество монет';
+    return;
+  }
+  if ((type === 'plant' || type === 'zombie' || type === 'role') && amount <= 0) {
+    resultEl.className = 'error';
+    resultEl.textContent = 'Укажите ID';
+    return;
+  }
+
+  try {
+    const res = await fetch(API + '/gift/' + userId, {
+      method: 'POST',
+      headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, amount, itemId: amount, message })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      resultEl.className = 'success';
+      resultEl.textContent = '✅ ' + data.message;
+      document.getElementById('gift-amount').value = '';
+      document.getElementById('gift-message').value = '';
+      loadUsers();
+      loadGiftUsers();
+    } else {
+      resultEl.className = 'error';
+      resultEl.textContent = '❌ ' + data.error;
+    }
+  } catch (e) {
+    resultEl.className = 'error';
+    resultEl.textContent = '❌ Ошибка подключения';
+  }
+}
+
+function quickGift(userId, nickname) {
+  document.getElementById('gift-user').value = userId;
+  document.querySelector('.gifts-section').scrollIntoView({ behavior: 'smooth' });
+  showToast('Выбран: ' + nickname);
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);color:#fff;padding:12px 24px;border-radius:10px;border:1px solid rgba(255,215,0,0.3);font-size:14px;z-index:9999;';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 }

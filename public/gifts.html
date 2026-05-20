@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Подарки — PvZ Online</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+  <style>
+    .gifts-container { max-width: 700px; margin: 0 auto; padding: 30px 20px; }
+    .section-title {
+      font-family: 'Creepster', cursive;
+      font-size: 22px;
+      color: #FF9800;
+      margin-bottom: 15px;
+    }
+    .gift-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: rgba(255,152,0,0.08);
+      border: 1px solid rgba(255,152,0,0.2);
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    .gift-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,152,0,0.15);
+      border: 2px solid rgba(255,152,0,0.3);
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .gift-info { flex: 1; }
+    .gift-type { font-weight: bold; font-size: 15px; }
+    .gift-from { font-size: 12px; color: #888; }
+    .gift-message { font-size: 12px; color: #CE93D8; font-style: italic; }
+    .gift-date { font-size: 11px; color: #666; }
+    .back-link {
+      display: inline-block;
+      padding: 10px 20px;
+      color: #888;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover { color: #fff; }
+    .empty-msg { color: #666; text-align: center; padding: 30px; }
+    .toast {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.9); color: #fff; padding: 12px 24px;
+      border-radius: 10px; border: 1px solid rgba(255,215,0,0.3);
+      font-size: 14px; z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <div class="gifts-container">
+    <h1 class="section-title">🎁 Мои подарки</h1>
+    <div id="gifts-list"></div>
+    <a href="/" class="back-link">← Назад в меню</a>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/gifts-client.js"></script>
+</body>
+</html>

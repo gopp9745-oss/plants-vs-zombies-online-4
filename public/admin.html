@@ -190,6 +190,68 @@
     .btn-kick { border-color: #FF5722; color: #FF5722; }
     .btn-end { border-color: #E91E63; color: #E91E63; }
     .btn-password { border-color: #00BCD4; color: #00BCD4; }
+    .btn-gift { border-color: #FF9800; color: #FF9800; }
+
+    .gifts-section {
+      margin-top: 30px;
+      padding: 20px;
+      background: rgba(255,152,0,0.05);
+      border: 1px solid rgba(255,152,0,0.2);
+      border-radius: 14px;
+    }
+    .gifts-section h2 {
+      font-family: 'Creepster', cursive;
+      color: #FF9800;
+      font-size: 22px;
+      margin-bottom: 15px;
+    }
+    .gift-form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .gift-select, .gift-input {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+    .gift-select { min-width: 150px; }
+    .gift-input { min-width: 120px; flex: 1; }
+    .gift-btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(45deg, #FF9800, #F57C00);
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .gift-btn:hover { transform: scale(1.05); }
+    #gift-result {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 8px;
+      display: none;
+    }
+    #gift-result.success {
+      display: block;
+      background: rgba(76,175,80,0.1);
+      border: 1px solid rgba(76,175,80,0.3);
+      color: #4CAF50;
+    }
+    #gift-result.error {
+      display: block;
+      background: rgba(244,67,54,0.1);
+      border: 1px solid rgba(244,67,54,0.3);
+      color: #f44336;
+    }
 
     .games-section {
       margin-top: 30px;
@@ -264,7 +326,7 @@
         <thead>
           <tr>
             <th>Игра</th>
-            <th>🌻 Растение</th>
+            <th> Растение</th>
             <th>🧟 Зомби</th>
             <th>HP дома</th>
             <th>Время</th>
@@ -274,6 +336,27 @@
         <tbody id="games-tbody"></tbody>
       </table>
     </div>
+
+    <div class="gifts-section">
+      <h2>🎁 Отправить подарок</h2>
+      <div class="gift-form">
+        <select id="gift-user" class="gift-select">
+          <option value="">Выберите игрока</option>
+        </select>
+        <select id="gift-type" class="gift-select">
+          <option value="coins">🪙 Монеты</option>
+          <option value="plant">🌱 Растение</option>
+          <option value="zombie">🧟 Зомби</option>
+          <option value="box">🎁 Бокс</option>
+          <option value="role"> Роль</option>
+        </select>
+        <input type="number" id="gift-amount" class="gift-input" placeholder="Кол-во / ID" />
+        <input type="text" id="gift-message" class="gift-input" placeholder="Сообщение (необязательно)" />
+        <button class="gift-btn" onclick="sendGift()">🎁 Отправить</button>
+      </div>
+      <div id="gift-result"></div>
+    </div>
+  </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>

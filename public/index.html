@@ -28,10 +28,40 @@
       </div>
 
       <div class="menu-buttons">
-        <button class="menu-btn primary" onclick="showScreen('role-select')">
+        <button class="menu-btn" onclick="showScreen('role-select')">
           <span class="btn-icon">⚔️</span>
           <span class="btn-text">ИГРАТЬ</span>
           <span class="btn-sub">Найти противника</span>
+        </button>
+        <button class="menu-btn" onclick="showInventory()">
+          <span class="btn-icon">🎒</span>
+          <span class="btn-text">ИНВЕНТАРЬ</span>
+          <span class="btn-sub">Выбрать отряд</span>
+        </button>
+        <button class="menu-btn shop-btn" onclick="window.location.href='/shop.html'">
+          <span class="btn-icon">🛒</span>
+          <span class="btn-text">МАГАЗИН</span>
+          <span class="btn-sub">Новые растения</span>
+        </button>
+        <button class="menu-btn profile-btn" onclick="window.location.href='/profile.html'">
+          <span class="btn-icon">👤</span>
+          <span class="btn-text">ПРОФИЛЬ</span>
+          <span class="btn-sub">Аватар и клан</span>
+        </button>
+        <button class="menu-btn friends-btn" onclick="window.location.href='/friends.html'">
+          <span class="btn-icon"></span>
+          <span class="btn-text">ДРУЗЬЯ</span>
+          <span class="btn-sub">Дружеский бой</span>
+        </button>
+        <button class="menu-btn gifts-btn" onclick="window.location.href='/gifts.html'">
+          <span class="btn-icon">🎁</span>
+          <span class="btn-text">ПОДАРКИ</span>
+          <span class="btn-sub">Полученные подарки</span>
+        </button>
+        <button class="menu-btn" onclick="showLeaderboard()">
+          <span class="btn-icon">🏆</span>
+          <span class="btn-text">ЛИДЕРБОРД</span>
+          <span class="btn-sub">Таблица чемпионов</span>
         </button>
         <button class="menu-btn" onclick="showInventory()">
           <span class="btn-icon">🎒</span>

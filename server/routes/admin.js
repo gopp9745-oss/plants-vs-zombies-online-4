@@ -103,4 +103,66 @@ router.post('/users/:id/reset-password', authMiddleware, async (req, res) => {
   }
 });
 
+router.post('/gift/:userId', authMiddleware, async (req, res) => {
+  try {
+    const { type, amount, itemId, message } = req.body;
+    const targetId = req.params.userId;
+    const validTypes = ['coins', 'plant', 'zombie', 'box', 'role'];
+    if (!validTypes.includes(type)) return res.status(400).json({ error: 'Invalid gift type' });
+
+    const targetResult = await query('SELECT * FROM users WHERE id = $1', [targetId]);
+    if (targetResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    const target = targetResult.rows[0];
+
+    const gift = {
+      type,
+      amount: amount || 0,
+      itemId: itemId || null,
+      from: req.adminUser.nickname,
+      date: new Date().toISOString(),
+      message: message || ''
+    };
+
+    let gifts = target.gifts || [];
+    gifts.push(gift);
+
+    if (type === 'coins') {
+      const currentCoins = target.coins || 0;
+      await query('UPDATE users SET coins = $1 WHERE id = $2', [currentCoins + amount, targetId]);
+    } else if (type === 'plant') {
+      const unlocked = target.unlocked_plants || [1, 2, 3];
+      if (!unlocked.includes(itemId)) {
+        await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [itemId, targetId]);
+      }
+    } else if (type === 'zombie') {
+      const unlocked = target.unlocked_zombies || [1, 2, 3];
+      if (!unlocked.includes(itemId)) {
+        await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [itemId, targetId]);
+      }
+    } else if (type === 'role') {
+      const validRoles = ['player', 'moderator', 'super_player', 'vip'];
+      if (validRoles.includes(itemId)) {
+        await query('UPDATE users SET role = $1 WHERE id = $2', [itemId, targetId]);
+      }
+    }
+
+    await query('UPDATE users SET gifts = $1 WHERE id = $2', [gifts, targetId]);
+
+    const typeNames = { coins: 'монеты', plant: 'растение', zombie: 'зомби', box: 'бокс', role: 'роль' };
+    res.json({ message: `Подарок отправлен: ${amount || ''} ${typeNames[type]}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/gifts/:userId', authMiddleware, async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM users WHERE id = $1', [req.params.userId]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json({ gifts: result.rows[0].gifts || [], coins: result.rows[0].coins || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
