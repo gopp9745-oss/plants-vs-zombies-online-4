@@ -11,7 +11,7 @@ async function loadFriends() {
     const friends = await res.json();
     const list = document.getElementById('friends-list');
     if (!friends.length) {
-      list.innerHTML = '<div class="empty-msg">Пока нет друзей. Найди игрока и добавь в друзья!</div>';
+      list.innerHTML = '<div class="empty-msg">Пока нет друзей. Найди игрока и отправь заявку!</div>';
       return;
     }
     list.innerHTML = '';
@@ -34,6 +34,38 @@ async function loadFriends() {
     });
   } catch (err) {
     console.error('Failed to load friends:', err);
+  }
+}
+
+async function loadRequests() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch(API + '/requests/' + currentUser.id);
+    const requests = await res.json();
+    const list = document.getElementById('requests-list');
+    if (!requests.length) {
+      list.innerHTML = '<div class="empty-msg">Нет входящих заявок</div>';
+      return;
+    }
+    list.innerHTML = '';
+    requests.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'request-card';
+      div.innerHTML = `
+        <div class="friend-avatar">${r.avatar}</div>
+        <div class="friend-info">
+          <div class="friend-name">${r.nickname}</div>
+          <div class="friend-clan"> ${r.clan || 'Без клана'}</div>
+        </div>
+        <div class="friend-actions">
+          <button class="friend-btn btn-accept" onclick="acceptRequest('${r.id}')">✓</button>
+          <button class="friend-btn btn-decline" onclick="declineRequest('${r.id}')">✕</button>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  } catch (err) {
+    console.error('Failed to load requests:', err);
   }
 }
 
@@ -89,9 +121,9 @@ function showSearchResult(data) {
       <div class="friend-avatar">${data.avatar}</div>
       <div class="friend-info">
         <div class="friend-name">${data.nickname}</div>
-        <div class="friend-clan"> ${data.clan || 'Без клана'}</div>
+        <div class="friend-clan">🏰 ${data.clan || 'Без клана'}</div>
       </div>
-      <button class="friend-btn btn-add" onclick="addFriend('${data.id}')">➕ Добавить</button>
+      <button class="friend-btn btn-add" onclick="sendRequest('${data.id}')"> Отправить заявку</button>
     </div>
   `;
 }
@@ -118,22 +150,55 @@ async function searchPlayer() {
   }
 }
 
-async function addFriend(friendId) {
+async function sendRequest(friendId) {
   try {
-    const res = await fetch(API + '/add/' + currentUser.id, {
+    const res = await fetch(API + '/send-request/' + currentUser.id, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ friendId })
     });
     const data = await res.json();
     if (res.ok) {
-      showToast('✅ ' + data.friendNickname + ' добавлен в друзья!');
+      showToast('✅ Заявка отправлена ' + data.friendNickname);
       document.getElementById('search-result').innerHTML = '';
       document.getElementById('search-input').value = '';
-      loadFriends();
     } else {
       showToast('❌ ' + data.error);
     }
+  } catch (err) {
+    showToast('❌ Ошибка');
+  }
+}
+
+async function acceptRequest(requesterId) {
+  try {
+    const res = await fetch(API + '/accept-request/' + currentUser.id, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requesterId })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showToast('✅ ' + data.friendNickname + ' добавлен в друзья!');
+      loadFriends();
+      loadRequests();
+    } else {
+      showToast('❌ ' + data.error);
+    }
+  } catch (err) {
+    showToast('❌ Ошибка');
+  }
+}
+
+async function declineRequest(requesterId) {
+  try {
+    await fetch(API + '/decline-request/' + currentUser.id, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requesterId })
+    });
+    showToast('Заявка отклонена');
+    loadRequests();
   } catch (err) {
     showToast('❌ Ошибка');
   }
@@ -196,6 +261,7 @@ function initFriendsPage() {
   });
 
   loadFriends();
+  loadRequests();
 }
 
 if (document.readyState === 'loading') {
