@@ -1,8 +1,8 @@
 const API = window.location.origin + '/api/friends';
 const socket = io();
 
-let searchResult = null;
-let searchTimeout = null;
+var searchResult = null;
+var searchTimeout = null;
 
 async function loadFriends() {
   if (!currentUser) return;
