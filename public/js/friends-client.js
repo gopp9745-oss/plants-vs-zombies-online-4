@@ -2,6 +2,7 @@ const API = window.location.origin + '/api/friends';
 const socket = io();
 
 let searchResult = null;
+let searchTimeout = null;
 
 async function loadFriends() {
   if (!currentUser) return;
@@ -25,7 +26,7 @@ async function loadFriends() {
           <div class="friend-stats">🏆 ${f.wins} / 💀 ${f.losses}</div>
         </div>
         <div class="friend-actions">
-          <button class="friend-btn btn-fight" onclick="startFriendly('${f.id}', '${f.nickname}')">⚔️ Бой</button>
+          <button class="friend-btn btn-fight" onclick="startFriendly('${f.id}', '${f.nickname.replace(/'/g, "\\'")}')">⚔️ Бой</button>
           <button class="friend-btn btn-remove" onclick="removeFriend('${f.id}')">✕</button>
         </div>
       `;
@@ -36,9 +37,62 @@ async function loadFriends() {
   }
 }
 
+async function searchPartial(q) {
+  if (!q || q.length < 2) {
+    document.getElementById('search-suggestions').innerHTML = '';
+    return;
+  }
+  try {
+    const res = await fetch(API + '/search/partial', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q })
+    });
+    const suggestions = await res.json();
+    const container = document.getElementById('search-suggestions');
+    if (!suggestions.length) {
+      container.innerHTML = '';
+      return;
+    }
+    container.innerHTML = '<div class="suggestions-dropdown">' +
+      suggestions.map(s => `
+        <div class="suggestion-item" onclick="selectSuggestion('${s.id}', '${s.nickname.replace(/'/g, "\\'")}', '${s.avatar}', '${(s.clan || '').replace(/'/g, "\\'")}')">
+          <span class="emoji">${s.avatar}</span>
+          <div>
+            <div class="name">${s.nickname}</div>
+            <div class="clan">🏰 ${s.clan || 'Без клана'} · 🏆 ${s.wins}</div>
+          </div>
+        </div>
+      `).join('') + '</div>';
+  } catch (err) {
+    console.error('Partial search error:', err);
+  }
+}
+
+function selectSuggestion(id, nickname, avatar, clan) {
+  document.getElementById('search-input').value = nickname;
+  document.getElementById('search-suggestions').innerHTML = '';
+  searchResult = { id, nickname, avatar, clan };
+  showSearchResult(searchResult);
+}
+
+function showSearchResult(data) {
+  document.getElementById('search-result').innerHTML = `
+    <div class="search-result">
+      <div class="friend-avatar">${data.avatar}</div>
+      <div class="friend-info">
+        <div class="friend-name">${data.nickname}</div>
+        <div class="friend-clan">🏰 ${data.clan || 'Без клана'}</div>
+      </div>
+      <button class="friend-btn btn-add" onclick="addFriend('${data.id}')">➕ Добавить</button>
+    </div>
+  `;
+}
+
 async function searchPlayer() {
   const nickname = document.getElementById('search-input').value.trim();
   if (!nickname) return;
+  document.getElementById('search-suggestions').innerHTML = '';
   try {
     const res = await fetch(API + '/search', {
       method: 'POST',
@@ -48,16 +102,7 @@ async function searchPlayer() {
     const data = await res.json();
     if (res.ok) {
       searchResult = data;
-      document.getElementById('search-result').innerHTML = `
-        <div class="search-result">
-          <div class="friend-avatar">${data.avatar}</div>
-          <div class="friend-info">
-            <div class="friend-name">${data.nickname}</div>
-            <div class="friend-clan">🏰 ${data.clan || 'Без клана'}</div>
-          </div>
-          <button class="friend-btn btn-add" onclick="addFriend('${data.id}')">➕ Добавить</button>
-        </div>
-      `;
+      showSearchResult(data);
     } else {
       document.getElementById('search-result').innerHTML = `<div class="empty-msg">❌ ${data.error}</div>`;
     }
@@ -65,6 +110,25 @@ async function searchPlayer() {
     showToast('❌ Ошибка');
   }
 }
+
+document.getElementById('search-input').addEventListener('input', (e) => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => searchPartial(e.target.value.trim()), 300);
+});
+
+document.getElementById('search-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    clearTimeout(searchTimeout);
+    document.getElementById('search-suggestions').innerHTML = '';
+    searchPlayer();
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-group') && !e.target.closest('.suggestions-dropdown')) {
+    document.getElementById('search-suggestions').innerHTML = '';
+  }
+});
 
 async function addFriend(friendId) {
   try {
@@ -77,6 +141,7 @@ async function addFriend(friendId) {
     if (res.ok) {
       showToast('✅ ' + data.friendNickname + ' добавлен в друзья!');
       document.getElementById('search-result').innerHTML = '';
+      document.getElementById('search-input').value = '';
       loadFriends();
     } else {
       showToast('❌ ' + data.error);
@@ -113,9 +178,5 @@ function showToast(msg) {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 }
-
-document.getElementById('search-input').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') searchPlayer();
-});
 
 loadFriends();

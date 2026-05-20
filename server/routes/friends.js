@@ -76,12 +76,30 @@ router.post('/search', async (req, res) => {
     console.log('[FRIENDS SEARCH] searching for:', nickname);
     if (!nickname) return res.status(400).json({ error: 'nickname required' });
     const result = await query('SELECT * FROM users WHERE nickname = $1', [nickname]);
-    console.log('[FRIENDS SEARCH] rows found:', result.rows.length);
+    console.log('[FRIENDS SEARCH] rows found:', result.rows.length, JSON.stringify(result.rows));
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     const u = result.rows[0];
     res.json({ id: u.id, nickname: u.nickname, avatar: u.avatar || '🌱', clan: u.clan || '', wins: u.wins, losses: u.losses });
   } catch (err) {
-    console.error('[FRIENDS SEARCH] error:', err.message);
+    console.error('[FRIENDS SEARCH] error:', err.message, err.stack);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/search/partial', async (req, res) => {
+  try {
+    const { query: q } = req.body;
+    if (!q || q.length < 2) return res.json([]);
+    const result = await query('SELECT * FROM users WHERE nickname = $1', [q]);
+    if (result.rows.length > 0) {
+      const u = result.rows[0];
+      return res.json([{ id: u.id, nickname: u.nickname, avatar: u.avatar || '🌱', clan: u.clan || '', wins: u.wins, losses: u.losses }]);
+    }
+    const allResult = await query('SELECT * FROM users ORDER BY wins DESC');
+    const matches = (allResult.rows || []).filter(u => u.nickname.toLowerCase().includes(q.toLowerCase())).slice(0, 5);
+    res.json(matches.map(u => ({ id: u.id, nickname: u.nickname, avatar: u.avatar || '🌱', clan: u.clan || '', wins: u.wins, losses: u.losses })));
+  } catch (err) {
+    console.error('[FRIENDS PARTIAL] error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

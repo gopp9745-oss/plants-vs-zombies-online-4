@@ -263,7 +263,7 @@ function fileQuery(sql, params) {
   }
 
   if (sql.includes('ORDER BY wins DESC')) {
-    return { rows: [...fileDb.users].sort((a, b) => b.wins - a.wins).slice(0, 50).map(u => ({ nickname: u.nickname, wins: u.wins, losses: u.losses, total_games: u.wins + u.losses, avatar: u.avatar || '🌱', clan: u.clan || '' })) };
+    return { rows: [...fileDb.users].sort((a, b) => b.wins - a.wins).slice(0, 50).map(u => ({ id: u.id, nickname: u.nickname, wins: u.wins, losses: u.losses, total_games: u.wins + u.losses, avatar: u.avatar || '🌱', clan: u.clan || '', friends: u.friends || [] })) };
   }
 
   if (sql.includes('loadouts WHERE user_id')) {

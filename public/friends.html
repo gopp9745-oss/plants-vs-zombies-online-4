@@ -81,6 +81,29 @@
       border-radius: 12px;
       margin-bottom: 15px;
     }
+    .suggestions-dropdown {
+      position: absolute;
+      background: rgba(20,20,20,0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      width: calc(100% - 40px);
+      max-width: 660px;
+    }
+    .suggestion-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .suggestion-item:hover { background: rgba(255,255,255,0.08); }
+    .suggestion-item .emoji { font-size: 24px; }
+    .suggestion-item .name { font-weight: bold; font-size: 14px; }
+    .suggestion-item .clan { font-size: 11px; color: #CE93D8; }
     .back-link {
       display: inline-block;
       padding: 10px 20px;
@@ -103,9 +126,10 @@
     <h1 class="section-title">👥 Друзья</h1>
 
     <div class="search-group">
-      <input type="text" class="search-input" id="search-input" placeholder="Никнейм игрока" />
+      <input type="text" class="search-input" id="search-input" placeholder="Никнейм игрока" autocomplete="off" />
       <button class="search-btn" onclick="searchPlayer()">Найти</button>
     </div>
+    <div id="search-suggestions"></div>
 
     <div id="search-result"></div>
 
