@@ -100,7 +100,7 @@ async function mongoQuery(sql, params) {
 
   if (sql.includes('ORDER BY wins DESC')) {
     const users = await User.find().sort({ wins: -1 }).limit(50).lean();
-    return { rows: users.map(u => ({ nickname: u.nickname, wins: u.wins, losses: u.losses, total_games: u.wins + u.losses, avatar: u.avatar || '🌱', clan: u.clan || '' })) };
+    return { rows: users.map(u => ({ id: u._id.toString(), nickname: u.nickname, wins: u.wins, losses: u.losses, total_games: u.wins + u.losses, avatar: u.avatar || '🌱', clan: u.clan || '', friends: u.friends || [] })) };
   }
 
   if (sql.includes('INSERT INTO loadouts')) {
