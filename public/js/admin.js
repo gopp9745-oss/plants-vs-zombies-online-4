@@ -1,55 +1,48 @@
 const API = window.location.origin + '/api/admin';
 const adminSocket = io();
-let adminToken = localStorage.getItem('adminToken');
 
-if (adminToken) {
-  showDashboard();
-  loadUsers();
-  loadGames();
+const savedUser = localStorage.getItem('pvz_user');
+const currentUser = savedUser ? JSON.parse(savedUser) : null;
+
+if (!currentUser || !currentUser.is_admin) {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('dashboard').classList.remove('active');
+  document.getElementById('login-error').textContent = 'У вас нет прав администратора';
+} else {
+  verifyAdmin();
 }
 
-async function login() {
-  const pass = document.getElementById('admin-pass').value;
-  const errEl = document.getElementById('login-error');
+async function verifyAdmin() {
   try {
-    const res = await fetch(API + '/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pass })
+    const res = await fetch(API + '/verify', {
+      headers: { 'x-user-id': currentUser.id }
     });
-    const data = await res.json();
-    if (data.success) {
-      adminToken = data.token;
-      localStorage.setItem('adminToken', adminToken);
+    if (res.ok) {
       showDashboard();
       loadUsers();
       loadGames();
     } else {
-      errEl.textContent = 'Неверный пароль';
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('dashboard').classList.remove('active');
+      document.getElementById('login-error').textContent = 'Доступ запрещён';
     }
   } catch (e) {
-    errEl.textContent = 'Ошибка подключения';
+    document.getElementById('login-error').textContent = 'Ошибка подключения';
   }
 }
 
-document.getElementById('admin-pass').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') login();
-});
+function headers() {
+  return { 'x-user-id': currentUser.id };
+}
 
 function logout() {
-  localStorage.removeItem('adminToken');
-  adminToken = null;
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('dashboard').classList.remove('active');
+  localStorage.removeItem('pvz_user');
+  window.location.href = '/login.html';
 }
 
 function showDashboard() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').classList.add('active');
-}
-
-function headers() {
-  return { 'x-admin-token': adminToken };
 }
 
 async function loadUsers() {
@@ -96,7 +89,7 @@ async function loadUsers() {
 }
 
 function loadGames() {
-  adminSocket.emit('admin_list_games', { adminToken });
+  adminSocket.emit('admin_list_games', { userId: currentUser.id });
 }
 
 adminSocket.on('admin_games_list', (games) => {
@@ -116,7 +109,7 @@ adminSocket.on('admin_games_list', (games) => {
       <td>${g.plantHP}%</td>
       <td>${time}</td>
       <td>
-        <button class="action-btn btn-end" onclick="endGame('${g.gameId}', 'plant')">🌻 Победа</button>
+        <button class="action-btn btn-end" onclick="endGame('${g.gameId}', 'plant')"> Победа</button>
         <button class="action-btn btn-end" onclick="endGame('${g.gameId}', 'zombie')">🧟 Победа</button>
         <button class="action-btn btn-kick" onclick="kickGame('${g.gameId}')">Закрыть</button>
       </td>
@@ -143,7 +136,7 @@ async function makeAdmin(id) {
 
 function kickUser(id) {
   if (!confirm('Кикнуть игрока из игры?')) return;
-  adminSocket.emit('admin_kick', { targetUserId: id, adminToken });
+  adminSocket.emit('admin_kick', { targetUserId: id, userId: currentUser.id });
 }
 
 async function resetStats(id) {
@@ -159,14 +152,14 @@ async function deleteUser(id) {
 }
 
 function endGame(gameId, winner) {
-  if (!confirm(`Завершить игру и присудить победу ${winner === 'plant' ? '🌻 растениям' : '🧟 зомби'}?`)) return;
-  adminSocket.emit('admin_end_game', { gameId, winner, adminToken });
+  if (!confirm(`Завершить игру и присудить победу ${winner === 'plant' ? '🌻 растениям' : ' зомби'}?`)) return;
+  adminSocket.emit('admin_end_game', { gameId, winner, userId: currentUser.id });
   loadGames();
 }
 
 function kickGame(gameId) {
   if (!confirm('Закрыть эту игру?')) return;
-  adminSocket.emit('admin_end_game', { gameId, winner: 'plant', adminToken });
+  adminSocket.emit('admin_end_game', { gameId, winner: 'plant', userId: currentUser.id });
   loadGames();
 }
 

@@ -3,21 +3,22 @@ const bcrypt = require('bcryptjs');
 const { query } = require('../db');
 const router = express.Router();
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-
-function authMiddleware(req, res, next) {
-  const token = req.headers['x-admin-token'];
-  if (token === ADMIN_PASSWORD) return next();
-  res.status(401).json({ error: 'Unauthorized' });
+async function authMiddleware(req, res, next) {
+  const userId = req.headers['x-user-id'];
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const result = await query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (result.rows.length === 0) return res.status(401).json({ error: 'User not found' });
+    if (!result.rows[0].is_admin) return res.status(403).json({ error: 'Admin access required' });
+    req.adminUser = result.rows[0];
+    next();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
 
-router.post('/login', (req, res) => {
-  const { password } = req.body;
-  if (password === ADMIN_PASSWORD) {
-    res.json({ success: true, token: ADMIN_PASSWORD });
-  } else {
-    res.status(401).json({ error: 'Wrong password' });
-  }
+router.get('/verify', authMiddleware, (req, res) => {
+  res.json({ success: true, user: { id: req.adminUser.id, nickname: req.adminUser.nickname } });
 });
 
 router.get('/stats', authMiddleware, async (req, res) => {

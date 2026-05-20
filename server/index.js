@@ -34,7 +34,6 @@ app.use('/api/friends', friendsRoutes);
 
 const readyStates = {};
 const GAME_DURATION = 300;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const userSockets = {}; // 5 minutes in seconds
 
 function safeEndGame(gameId, winner) {
@@ -183,8 +182,9 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('admin_kick', async ({ targetUserId, adminToken }) => {
-    if (adminToken !== ADMIN_PASSWORD) return;
+  socket.on('admin_kick', async ({ targetUserId, userId }) => {
+    const adminCheck = await query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (!adminCheck.rows.length || !adminCheck.rows[0].is_admin) return;
     const targetSocketId = userSockets[targetUserId];
     if (targetSocketId) {
       io.to(targetSocketId).emit('admin_kicked');
@@ -193,8 +193,9 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('admin_end_game', async ({ gameId, winner, adminToken }) => {
-    if (adminToken !== ADMIN_PASSWORD) return;
+  socket.on('admin_end_game', async ({ gameId, winner, userId }) => {
+    const adminCheck = await query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (!adminCheck.rows.length || !adminCheck.rows[0].is_admin) return;
     const game = gameManager.getGame(gameId);
     if (!game || game.finished) return;
     game.state.gameOver = true;
@@ -204,8 +205,9 @@ io.on('connection', (socket) => {
     console.log('Admin ended game:', gameId, 'winner:', winner);
   });
 
-  socket.on('admin_list_games', async ({ adminToken }) => {
-    if (adminToken !== ADMIN_PASSWORD) return;
+  socket.on('admin_list_games', async ({ userId }) => {
+    const adminCheck = await query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (!adminCheck.rows.length || !adminCheck.rows[0].is_admin) return;
     const games = gameManager.getAllGames();
     const active = Object.values(games).filter(g => !g.finished).map(g => ({
       gameId: g.id,
