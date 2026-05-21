@@ -127,6 +127,20 @@ async function mongoQuery(sql, params) {
     return { rows: [] };
   }
 
+  if (sql.includes('wins = wins + 1') && sql.includes('coins = coins +')) {
+    const match = sql.match(/coins \+ (\d+)/);
+    const inc = match ? parseInt(match[1]) : 0;
+    await User.findByIdAndUpdate(params[0], { $inc: { wins: 1, coins: inc } });
+    return { rows: [] };
+  }
+
+  if (sql.includes('losses = losses + 1') && sql.includes('coins = coins +')) {
+    const match = sql.match(/coins \+ (\d+)/);
+    const inc = match ? parseInt(match[1]) : 0;
+    await User.findByIdAndUpdate(params[0], { $inc: { losses: 1, coins: inc } });
+    return { rows: [] };
+  }
+
   if (sql.includes('UPDATE users SET wins = wins + 1')) {
     await User.findByIdAndUpdate(params[0], { $inc: { wins: 1 } });
     return { rows: [] };
@@ -177,8 +191,20 @@ async function mongoQuery(sql, params) {
     return { rows: [] };
   }
 
+  if (sql.includes('coins = coins +')) {
+    const match = sql.match(/coins \+ (\d+)/);
+    const inc = match ? parseInt(match[1]) : 0;
+    await User.findByIdAndUpdate(params[0], { $inc: { coins: inc } });
+    return { rows: [] };
+  }
+
   if (sql.includes('UPDATE users SET coins')) {
     await User.findByIdAndUpdate(params[1], { coins: params[0] });
+    return { rows: [] };
+  }
+
+  if (sql.includes('UPDATE users SET unlocked_zombies')) {
+    await User.findByIdAndUpdate(params[1], { $addToSet: { unlocked_zombies: params[0] } });
     return { rows: [] };
   }
 
@@ -259,6 +285,40 @@ function fileQuery(sql, params) {
       if (!u.unlocked_plants.includes(params[0])) u.unlocked_plants.push(params[0]);
       saveFileDb();
     }
+    return { rows: [] };
+  }
+
+  if (sql.includes('UPDATE users SET unlocked_zombies')) {
+    const u = fileDb.users.find(u => u.id == params[1]);
+    if (u) {
+      if (!u.unlocked_zombies) u.unlocked_zombies = [1, 2, 3];
+      if (!u.unlocked_zombies.includes(params[0])) u.unlocked_zombies.push(params[0]);
+      saveFileDb();
+    }
+    return { rows: [] };
+  }
+
+  if (sql.includes('wins = wins + 1') && sql.includes('coins = coins +')) {
+    const match = sql.match(/coins \+ (\d+)/);
+    const inc = match ? parseInt(match[1]) : 0;
+    const u = fileDb.users.find(u => u.id == params[0]);
+    if (u) { u.wins++; u.coins = (u.coins || 0) + inc; saveFileDb(); }
+    return { rows: [] };
+  }
+
+  if (sql.includes('losses = losses + 1') && sql.includes('coins = coins +')) {
+    const match = sql.match(/coins \+ (\d+)/);
+    const inc = match ? parseInt(match[1]) : 0;
+    const u = fileDb.users.find(u => u.id == params[0]);
+    if (u) { u.losses++; u.coins = (u.coins || 0) + inc; saveFileDb(); }
+    return { rows: [] };
+  }
+
+  if (sql.includes('coins = coins +')) {
+    const match = sql.match(/coins \+ (\d+)/);
+    const inc = match ? parseInt(match[1]) : 0;
+    const u = fileDb.users.find(u => u.id == params[0]);
+    if (u) { u.coins = (u.coins || 0) + inc; saveFileDb(); }
     return { rows: [] };
   }
 

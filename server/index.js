@@ -238,16 +238,9 @@ io.on('connection', (socket) => {
       finished: false,
       friendly: true
     };
-    const game = gameManager.games[gameId];
-    io.to(socket.id).socketsJoin(gameId);
+    socket.join(gameId);
     readyStates[gameId] = { plant: false, zombie: false };
-    io.to(socket.id).emit('match_found', {
-      gameId, role,
-      plantNickname: role === 'plant' ? nickname : 'Friend',
-      zombieNickname: role === 'zombie' ? nickname : 'Friend',
-      friendly: true
-    });
-    io.to(socket.id).emit('waiting_for_friend', { gameId, friendId });
+    socket.emit('waiting_for_friend', { gameId, friendId });
   });
 
   socket.on('friend_join_match', ({ userId, role, loadout, nickname, gameId, friendId }) => {
@@ -260,13 +253,19 @@ io.on('connection', (socket) => {
     game[role === 'plant' ? 'plantSocketId' : 'zombieSocketId'] = socket.id;
     game[role === 'plant' ? 'plantLoadout' : 'zombieLoadout'] = loadout;
     socket.join(gameId);
-    io.to(socket.id).emit('match_found', {
+
+    io.to(game.plantSocketId).emit('match_found', {
+      gameId, role: 'plant',
+      plantNickname: game.plantNickname,
+      zombieNickname: game.zombieNickname,
+      friendly: true
+    });
+    socket.emit('match_found', {
       gameId, role,
       plantNickname: game.plantNickname,
       zombieNickname: game.zombieNickname,
       friendly: true
     });
-    io.to(gameId).emit('both_connected');
   });
 });
 
