@@ -56,6 +56,30 @@
   border-radius: 10px;
 }
 
+.players-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #666;
+  transition: background 0.3s;
+}
+
+.status-dot.online {
+  background: #4CAF50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+}
+
+.status-dot.offline {
+  background: #f44336;
+  box-shadow: 0 0 8px rgba(244, 67, 54, 0.5);
+}
+
 #surrender-btn {
   padding: 6px 18px;
   border: 2px solid rgba(244,67,54,0.4);

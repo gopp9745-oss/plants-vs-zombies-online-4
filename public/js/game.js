@@ -29,6 +29,8 @@ let animFrameId = null;
 const GAME_DURATION = 300;
 const INTERPOLATION_DELAY = 100;
 
+let playerStatus = { plant: 'online', zombie: 'online' };
+
 const plantEmojis = ['🌻', '🌱', '🥜', '🍒', '❄️', '🔁', '💣', '👯'];
 const zombieEmojis = ['🧟', '🧟‍♂️', '🪖', '🏃', '👹', '💃', '🏈', '🎣'];
 
@@ -100,6 +102,7 @@ function init() {
 
   loadItems();
   setupEventListeners();
+  updatePlayerStatus();
 
   socket.emit('join_game_room', { gameId, role });
 }
@@ -238,6 +241,23 @@ socket.on('game_state', (state) => {
   updateSunDisplay();
   updateTimerDisplay();
 });
+
+socket.on('player_status_change', ({ userId, online }) => {
+  if (userId === plantNickname || userId === zombieNickname) {
+    const playerRole = userId === plantNickname ? 'plant' : 'zombie';
+    playerStatus[playerRole] = online ? 'online' : 'offline';
+    updatePlayerStatus();
+  }
+});
+
+function updatePlayerStatus() {
+  const p1Dot = document.getElementById('player1-status');
+  const p2Dot = document.getElementById('player2-status');
+  if (p1Dot && p2Dot) {
+    p1Dot.className = `status-dot ${playerStatus.plant}`;
+    p2Dot.className = `status-dot ${playerStatus.zombie}`;
+  }
+}
 
 socket.on('game_over', ({ winner, admin }) => {
   clearInterval(sunInterval);

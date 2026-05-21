@@ -179,6 +179,20 @@ io.on('connection', (socket) => {
     if (currentUserId) {
       delete userSockets[currentUserId];
       gameManager.cancelWait(currentUserId);
+      
+      // Notify other players in friendly match
+      for (const gameId in gameManager.games) {
+        const game = gameManager.games[gameId];
+        if (game.friendly && !game.finished) {
+          if (game.plantId === currentUserId || game.zombieId === currentUserId) {
+            const otherId = game.plantId === currentUserId ? game.zombieId : game.plantId;
+            const otherSocketId = userSockets[otherId];
+            if (otherSocketId) {
+              io.to(otherSocketId).emit('player_status_change', { userId: currentUserId, online: false });
+            }
+          }
+        }
+      }
     }
   });
 
@@ -236,7 +250,8 @@ io.on('connection', (socket) => {
       state: gameManager.createInitialState(),
       started: Date.now(),
       finished: false,
-      friendly: true
+      friendly: true,
+      hostUserId: userId
     };
     socket.join(gameId);
     readyStates[gameId] = { plant: false, zombie: false };
@@ -254,12 +269,15 @@ io.on('connection', (socket) => {
     game[role === 'plant' ? 'plantLoadout' : 'zombieLoadout'] = loadout;
     socket.join(gameId);
 
-    io.to(game.plantSocketId).emit('match_found', {
-      gameId, role: 'plant',
-      plantNickname: game.plantNickname,
-      zombieNickname: game.zombieNickname,
-      friendly: true
-    });
+    const hostSocketId = game.hostUserId ? userSockets[game.hostUserId] : null;
+    if (hostSocketId) {
+      io.to(hostSocketId).emit('match_found', {
+        gameId, role: game.hostUserId === game.plantId ? 'plant' : 'zombie',
+        plantNickname: game.plantNickname,
+        zombieNickname: game.zombieNickname,
+        friendly: true
+      });
+    }
     socket.emit('match_found', {
       gameId, role,
       plantNickname: game.plantNickname,
