@@ -87,10 +87,11 @@ async function loadLeaderboard() {
       const rank = getRank(player.wins || 0);
       const avatar = player.avatar || '🌱';
       const isOnline = onlineUserIds.includes(String(player.id));
-      const clanTag = player.clan ? ` <span class="clan-tag">🏰 ${player.clan}</span>` : '';
+      const roleNames = { player: '', moderator: '🔷 Модератор', super_player: '⭐ Сверх игрок', vip: '👑 V.I.P' };
+      const roleBadge = player.role && player.role !== 'player' ? `<span class="rank-badge" style="color:#FFD700">${roleNames[player.role]}</span>` : '';
       row.innerHTML = `
         <td class="rank">${getRankBadge(index + 1)}</td>
-        <td><span class="lb-player"><span class="lb-avatar">${avatar}</span><span class="online-dot ${isOnline ? 'online' : ''}"></span>${player.nickname || '???'}<span class="rank-badge" style="color:${rank.color}">${rank.emoji} ${rank.name}</span>${clanTag}</span></td>
+        <td><span class="lb-player"><span class="lb-avatar">${avatar}</span><span class="online-dot ${isOnline ? 'online' : ''}"></span>${player.nickname || '???'}${roleBadge}<span class="rank-badge" style="color:${rank.color}">${rank.emoji} ${rank.name}</span>${clanTag}</span></td>
         <td class="wins">${player.wins ?? 0}</td>
         <td class="losses">${player.losses ?? 0}</td>
         <td>${player.total_games ?? 0}</td>

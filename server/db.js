@@ -105,7 +105,7 @@ async function mongoQuery(sql, params) {
   if (sql.includes('ORDER BY wins DESC')) {
     const users = await User.find({ is_banned: false }).sort({ wins: -1 }).limit(50).lean();
     console.log('[DB] ORDER BY wins DESC found', users.length, 'users');
-    return { rows: users.map(u => ({ id: u._id.toString(), nickname: u.nickname, wins: u.wins, losses: u.losses, total_games: u.wins + u.losses, avatar: u.avatar || '', clan: u.clan || '', friends: u.friends || [], friend_requests: u.friend_requests || [], is_banned: u.is_banned || false })) };
+    return { rows: users.map(u => ({ id: u._id.toString(), nickname: u.nickname, wins: u.wins, losses: u.losses, total_games: u.wins + u.losses, avatar: u.avatar || '', role: u.role || 'player', clan: u.clan || '', friends: u.friends || [], friend_requests: u.friend_requests || [], is_banned: u.is_banned || false })) };
   }
 
   if (sql.includes('INSERT INTO loadouts')) {
@@ -365,7 +365,7 @@ function fileQuery(sql, params) {
 
   if (sql.includes('ORDER BY wins DESC')) {
     console.log('[DB FILE] ORDER BY wins DESC found', fileDb.users.length, 'users');
-    return { rows: [...fileDb.users].filter(u => !u.is_banned).sort((a, b) => b.wins - a.wins).slice(0, 50).map(u => ({ id: u.id, nickname: u.nickname, wins: u.wins, losses: u.losses, total_games: u.wins + u.losses, avatar: u.avatar || '', clan: u.clan || '', friends: u.friends || [], friend_requests: u.friend_requests || [], is_banned: u.is_banned || false })) };
+    return { rows: [...fileDb.users].filter(u => !u.is_banned).sort((a, b) => b.wins - a.wins).slice(0, 50).map(u => ({ id: u.id, nickname: u.nickname, wins: u.wins, losses: u.losses, total_games: u.wins + u.losses, avatar: u.avatar || '', role: u.role || 'player', clan: u.clan || '', friends: u.friends || [], friend_requests: u.friend_requests || [], is_banned: u.is_banned || false })) };
   }
 
   if (sql.includes('loadouts WHERE user_id')) {

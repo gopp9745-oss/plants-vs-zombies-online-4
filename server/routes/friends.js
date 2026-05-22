@@ -14,7 +14,7 @@ router.get('/list/:userId', async (req, res) => {
       const fr = await query('SELECT * FROM users WHERE id = $1', [fid]);
       if (fr.rows.length > 0) {
         const f = fr.rows[0];
-        friends.push({ id: f.id, nickname: f.nickname, avatar: f.avatar || '', clan: f.clan || '', wins: f.wins, losses: f.losses, is_banned: f.is_banned || false });
+        friends.push({ id: f.id, nickname: f.nickname, avatar: f.avatar || '', role: f.role || 'player', clan: f.clan || '', wins: f.wins, losses: f.losses, is_banned: f.is_banned || false });
       }
     }
     res.json(friends);
@@ -35,7 +35,7 @@ router.get('/requests/:userId', async (req, res) => {
       const rr = await query('SELECT * FROM users WHERE id = $1', [rid]);
       if (rr.rows.length > 0) {
         const r = rr.rows[0];
-        requests.push({ id: r.id, nickname: r.nickname, avatar: r.avatar || '', clan: r.clan || '', wins: r.wins, losses: r.losses });
+        requests.push({ id: r.id, nickname: r.nickname, avatar: r.avatar || '', role: r.role || 'player', clan: r.clan || '', wins: r.wins, losses: r.losses });
       }
     }
     res.json(requests);
@@ -160,7 +160,7 @@ router.post('/search/partial', async (req, res) => {
     
     console.log('[FRIENDS PARTIAL] found', matches.length, 'matches');
     
-    res.json(matches.map(u => ({ id: u.id, nickname: u.nickname, avatar: u.avatar || '🌱', clan: u.clan || '', wins: u.wins, losses: u.losses })));
+    res.json(matches.map(u => ({ id: u.id, nickname: u.nickname, avatar: u.avatar || '🌱', role: u.role || 'player', clan: u.clan || '', wins: u.wins, losses: u.losses })));
   } catch (err) {
     console.error('[FRIENDS PARTIAL] error:', err.message);
     res.status(500).json({ error: err.message });
@@ -181,7 +181,7 @@ router.post('/search', async (req, res) => {
     if (!found) return res.status(404).json({ error: 'User not found' });
     
     console.log('[FRIENDS SEARCH] found:', found.nickname);
-    res.json({ id: found.id, nickname: found.nickname, avatar: found.avatar || '🌱', clan: found.clan || '', wins: found.wins, losses: found.losses });
+    res.json({ id: found.id, nickname: found.nickname, avatar: found.avatar || '🌱', role: found.role || 'player', clan: found.clan || '', wins: found.wins, losses: found.losses });
   } catch (err) {
     console.error('[FRIENDS SEARCH] error:', err.message, err.stack);
     res.status(500).json({ error: err.message });
