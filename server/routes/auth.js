@@ -130,7 +130,7 @@ router.get('/gifts/me', async (req, res) => {
     const result = await query('SELECT * FROM users WHERE id = $1', [userId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     const u = result.rows[0];
-    const gifts = (u.gifts || []).map((g, i) => ({ ...g, index: i }));
+    const gifts = (u.gifts || []).filter(g => !g.claimed).map((g, i) => ({ ...g, index: i }));
     res.json({ gifts, coins: u.coins || 0, unlocked_plants: u.unlocked_plants || [1, 2, 3], unlocked_zombies: u.unlocked_zombies || [1, 2, 3] });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -148,9 +148,20 @@ router.post('/gifts/claim/:giftIndex', async (req, res) => {
     const u = result.rows[0];
     const gifts = u.gifts || [];
 
-    if (giftIndex < 0 || giftIndex >= gifts.length) return res.status(400).json({ error: 'Invalid gift index' });
-    const gift = gifts[giftIndex];
-    if (gift.claimed) return res.status(400).json({ error: 'Gift already claimed' });
+    // Find the giftIndex-th unclaimed gift
+    let realIdx = -1;
+    let unclaimedCount = -1;
+    for (let i = 0; i < gifts.length; i++) {
+      if (!gifts[i].claimed) {
+        unclaimedCount++;
+        if (unclaimedCount === giftIndex) {
+          realIdx = i;
+          break;
+        }
+      }
+    }
+    if (realIdx === -1) return res.status(400).json({ error: 'Invalid gift index' });
+    const gift = gifts[realIdx];
 
     const PLANTS = [
       { id: 1, name: 'Подсолнух', emoji: '🌻' },
@@ -229,7 +240,7 @@ router.post('/gifts/claim/:giftIndex', async (req, res) => {
       reward = { type: 'role', id: gift.itemId };
     }
 
-    gifts.splice(giftIndex, 1);
+    gifts.splice(realIdx, 1);
     await query('UPDATE users SET gifts = $1 WHERE id = $2', [gifts, userId]);
 
     res.json({ message: 'Gift claimed', reward });
