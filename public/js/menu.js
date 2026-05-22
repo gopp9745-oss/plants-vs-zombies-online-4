@@ -89,6 +89,7 @@ async function loadLeaderboard() {
       const isOnline = onlineUserIds.includes(String(player.id));
       const roleNames = { player: '', moderator: '🔷 Модератор', super_player: '⭐ Сверх игрок', vip: '👑 V.I.P' };
       const roleBadge = player.role && player.role !== 'player' ? `<span class="rank-badge" style="color:#FFD700">${roleNames[player.role]}</span>` : '';
+      const clanTag = player.clan ? ` <span class="clan-tag">🏰 ${player.clan}</span>` : '';
       row.innerHTML = `
         <td class="rank">${getRankBadge(index + 1)}</td>
         <td><span class="lb-player"><span class="lb-avatar">${avatar}</span><span class="online-dot ${isOnline ? 'online' : ''}"></span>${player.nickname || '???'}${roleBadge}<span class="rank-badge" style="color:${rank.color}">${rank.emoji} ${rank.name}</span>${clanTag}</span></td>
