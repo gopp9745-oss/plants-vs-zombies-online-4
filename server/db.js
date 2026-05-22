@@ -208,6 +208,11 @@ async function mongoQuery(sql, params) {
     return { rows: [] };
   }
 
+  if (sql.includes('UPDATE users SET role')) {
+    await User.findByIdAndUpdate(params[1], { role: params[0] });
+    return { rows: [] };
+  }
+
   if (sql.includes('UPDATE users SET avatar')) {
     await User.findByIdAndUpdate(params[1], { avatar: params[0] });
     return { rows: [] };
@@ -370,6 +375,12 @@ function fileQuery(sql, params) {
   if (sql.includes('UPDATE loadouts SET')) {
     const l = fileDb.loadouts.find(l => Number(l.user_id) === Number(params[6]) && l.role === params[7]);
     if (l) { l.slot1 = params[0]; l.slot2 = params[1]; l.slot3 = params[2]; l.slot4 = params[3]; l.slot5 = params[4]; l.slot6 = params[5]; saveFileDb(); }
+    return { rows: [] };
+  }
+
+  if (sql.includes('UPDATE users SET role')) {
+    const u = fileDb.users.find(u => u.id == params[1]);
+    if (u) { u.role = params[0] || 'player'; saveFileDb(); }
     return { rows: [] };
   }
 
