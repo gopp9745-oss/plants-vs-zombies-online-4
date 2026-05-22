@@ -1,8 +1,5 @@
 const API = window.location.origin + '/api/auth';
 
-const PLANT_EMOJIS = { 1: '🌻', 2: '🌱', 3: '🥜', 4: '🍒', 5: '❄️', 6: '🔁', 7: '💣', 8: '👯' };
-const ZOMBIE_EMOJIS = { 1: '🧟', 2: '🧟‍♂️', 3: '🪖', 4: '🏃', 5: '👹', 6: '💃', 7: '🏈', 8: '🎣' };
-
 function showBoxAnimation(reward) {
   const overlay = document.createElement('div');
   overlay.id = 'reward-overlay';
@@ -10,9 +7,9 @@ function showBoxAnimation(reward) {
     <div class="reward-container">
       <div class="reward-box">🎁</div>
       <div class="reward-result">
-        <div class="reward-emoji">${reward.type === 'plant' ? (PLANT_EMOJIS[reward.id] || '🌱') : (ZOMBIE_EMOJIS[reward.id] || '🧟')}</div>
-        <div class="reward-label">${reward.type === 'plant' ? '🌱 Растение' : '🧟 Зомби'} #${reward.id}</div>
-        <div class="reward-subtitle">${reward.type === 'coins' ? '🪙 +' + reward.amount : 'Получено из бокса!'}</div>
+        <div class="reward-emoji">${reward.emoji || '?'}</div>
+        <div class="reward-label">${reward.name || 'Неизвестно'}</div>
+        <div class="reward-subtitle">${reward.type === 'plant' ? '🌱 Растение' : '🧟 Зомби'} получено!</div>
       </div>
     </div>
   `;

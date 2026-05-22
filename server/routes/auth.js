@@ -152,13 +152,42 @@ router.post('/gifts/claim/:giftIndex', async (req, res) => {
     const gift = gifts[giftIndex];
     if (gift.claimed) return res.status(400).json({ error: 'Gift already claimed' });
 
+    const PLANTS = [
+      { id: 1, name: 'Подсолнух', emoji: '🌻' },
+      { id: 2, name: 'Горохострел', emoji: '🌱' },
+      { id: 3, name: 'Стена-орех', emoji: '🥜' },
+      { id: 4, name: 'Вишня-бомба', emoji: '🍒' },
+      { id: 5, name: 'Снежный горох', emoji: '❄️' },
+      { id: 6, name: 'Повторитель', emoji: '🔁' },
+      { id: 7, name: 'Кактус', emoji: '🌵' },
+      { id: 8, name: 'Тыква', emoji: '🎃' },
+      { id: 9, name: 'Магнит', emoji: '🧲' },
+      { id: 10, name: 'Гриб-взрыв', emoji: '🍄' },
+      { id: 11, name: 'Зонт', emoji: '☂️' },
+      { id: 12, name: 'Кофе', emoji: '☕' },
+    ];
+    const ZOMBIES = [
+      { id: 1, name: 'Обычный', emoji: '🧟' },
+      { id: 2, name: 'Конус', emoji: '🧟‍♂️' },
+      { id: 3, name: 'Ведро', emoji: '🪖' },
+      { id: 4, name: 'Футболист', emoji: '🏃' },
+      { id: 5, name: 'Танцор', emoji: '💃' },
+      { id: 6, name: 'Гаргантюа', emoji: '👹' },
+      { id: 7, name: 'Имп', emoji: '👾' },
+      { id: 8, name: 'Зомбони', emoji: '🏎️' },
+    ];
+
+    function getItemInfo(id, list) {
+      return list.find(i => i.id === id) || { name: 'Неизвестно', emoji: '❓' };
+    }
+
     const unlockedPlants = u.unlocked_plants || [1, 2, 3];
     const unlockedZombies = u.unlocked_zombies || [1, 2, 3];
     let reward = null;
 
     if (gift.type === 'box') {
       const BOX_REWARDS = [
-        { type: 'plant', ids: [2, 4, 5, 6, 7, 8] },
+        { type: 'plant', ids: [2, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
         { type: 'zombie', ids: [2, 3, 4, 5, 6, 7, 8] },
       ];
       const pool = Math.random() < 0.5 ? BOX_REWARDS[0] : BOX_REWARDS[1];
@@ -167,7 +196,8 @@ router.post('/gifts/claim/:giftIndex', async (req, res) => {
       const wonId = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : pool.ids[0];
       const updateField = pool.type === 'plant' ? 'unlocked_plants' : 'unlocked_zombies';
       await query(`UPDATE users SET ${updateField} = $1 WHERE id = $2`, [wonId, userId]);
-      reward = { type: pool.type, id: wonId };
+      const info = getItemInfo(wonId, pool.type === 'plant' ? PLANTS : ZOMBIES);
+      reward = { type: pool.type, id: wonId, name: info.name, emoji: info.emoji };
     } else if (gift.type === 'coins') {
       const amount = gift.amount || 0;
       const currentCoins = u.coins || 0;
@@ -177,12 +207,14 @@ router.post('/gifts/claim/:giftIndex', async (req, res) => {
       if (!unlockedPlants.includes(gift.itemId)) {
         await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [gift.itemId, userId]);
       }
-      reward = { type: 'plant', id: gift.itemId };
+      const info = getItemInfo(gift.itemId, PLANTS);
+      reward = { type: 'plant', id: gift.itemId, name: info.name, emoji: info.emoji };
     } else if (gift.type === 'zombie') {
       if (!unlockedZombies.includes(gift.itemId)) {
         await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [gift.itemId, userId]);
       }
-      reward = { type: 'zombie', id: gift.itemId };
+      const info = getItemInfo(gift.itemId, ZOMBIES);
+      reward = { type: 'zombie', id: gift.itemId, name: info.name, emoji: info.emoji };
     } else if (gift.type === 'role') {
       const validRoles = ['player', 'moderator', 'super_player', 'vip'];
       if (validRoles.includes(gift.itemId)) {
