@@ -110,52 +110,56 @@ router.post('/users/:id/reset-password', authMiddleware, async (req, res) => {
 
 router.post('/gift/:userId', authMiddleware, async (req, res) => {
   try {
-    const { type, amount, itemId, message } = req.body;
+    const { gifts, message } = req.body;
+    if (!gifts || !Array.isArray(gifts) || gifts.length === 0) {
+      return res.status(400).json({ error: 'Gifts array required' });
+    }
     const targetId = req.params.userId;
-    const validTypes = ['coins', 'plant', 'zombie', 'box', 'role'];
-    if (!validTypes.includes(type)) return res.status(400).json({ error: 'Invalid gift type' });
-
     const targetResult = await query('SELECT * FROM users WHERE id = $1', [targetId]);
     if (targetResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     const target = targetResult.rows[0];
+    const validTypes = ['coins', 'plant', 'zombie', 'box', 'role'];
 
-    const gift = {
-      type,
-      amount: amount || 0,
-      itemId: itemId || null,
-      from: req.adminUser.nickname,
-      date: new Date().toISOString(),
-      message: message || ''
-    };
+    let userGifts = target.gifts || [];
+    let count = 0;
 
-    let gifts = target.gifts || [];
-    gifts.push(gift);
+    for (const g of gifts) {
+      if (!validTypes.includes(g.type)) continue;
 
-    if (type === 'coins') {
-      const currentCoins = target.coins || 0;
-      await query('UPDATE users SET coins = $1 WHERE id = $2', [currentCoins + amount, targetId]);
-    } else if (type === 'plant') {
-      const unlocked = (target.unlocked_plants || [1, 2, 3]).map(Number);
-      if (!unlocked.includes(Number(itemId))) {
-        await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [Number(itemId), targetId]);
+      userGifts.push({
+        type: g.type,
+        amount: g.amount || 0,
+        itemId: g.itemId || null,
+        from: req.adminUser.nickname,
+        date: new Date().toISOString(),
+        message: g.message || message || ''
+      });
+
+      if (g.type === 'coins') {
+        const currentCoins = target.coins || 0;
+        await query('UPDATE users SET coins = $1 WHERE id = $2', [currentCoins + (g.amount || 0), targetId]);
+      } else if (g.type === 'plant') {
+        const unlocked = (target.unlocked_plants || [1, 2, 3]).map(Number);
+        if (!unlocked.includes(Number(g.itemId))) {
+          await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [Number(g.itemId), targetId]);
+        }
+      } else if (g.type === 'zombie') {
+        const unlocked = (target.unlocked_zombies || [1, 2, 3]).map(Number);
+        if (!unlocked.includes(Number(g.itemId))) {
+          await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [Number(g.itemId), targetId]);
+        }
+      } else if (g.type === 'role') {
+        const validRoles = ['player', 'moderator', 'super_player', 'vip'];
+        if (validRoles.includes(g.itemId)) {
+          await query('UPDATE users SET role = $1 WHERE id = $2', [g.itemId, targetId]);
+          if (io) io.emit('role_updated', { userId: targetId, role: g.itemId });
+        }
       }
-    } else if (type === 'zombie') {
-      const unlocked = (target.unlocked_zombies || [1, 2, 3]).map(Number);
-      if (!unlocked.includes(Number(itemId))) {
-        await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [Number(itemId), targetId]);
-      }
-    } else if (type === 'role') {
-      const validRoles = ['player', 'moderator', 'super_player', 'vip'];
-      if (validRoles.includes(itemId)) {
-        await query('UPDATE users SET role = $1 WHERE id = $2', [itemId, targetId]);
-        if (io) io.emit('role_updated', { userId: targetId, role: itemId });
-      }
+      count++;
     }
 
-    await query('UPDATE users SET gifts = $1 WHERE id = $2', [gifts, targetId]);
-
-    const typeNames = { coins: 'монеты', plant: 'растение', zombie: 'зомби', box: 'бокс', role: 'роль' };
-    res.json({ message: `Подарок отправлен: ${amount || ''} ${typeNames[type]}` });
+    await query('UPDATE users SET gifts = $1 WHERE id = $2', [userGifts, targetId]);
+    res.json({ message: `Отправлено ${count} подарков` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -173,56 +177,60 @@ router.get('/gifts/:userId', authMiddleware, async (req, res) => {
 
 router.post('/gift-all', authMiddleware, async (req, res) => {
   try {
-    const { type, amount, itemId, message } = req.body;
+    const { gifts, message } = req.body;
+    if (!gifts || !Array.isArray(gifts) || gifts.length === 0) {
+      return res.status(400).json({ error: 'Gifts array required' });
+    }
     const validTypes = ['coins', 'plant', 'zombie', 'box', 'role'];
-    if (!validTypes.includes(type)) return res.status(400).json({ error: 'Invalid gift type' });
 
     const allUsersResult = await query('SELECT * FROM users ORDER BY created_at DESC');
     const users = allUsersResult.rows.filter(u => u.nickname !== ADMIN_NICKNAME);
-    
+
     if (users.length === 0) return res.json({ message: 'No users to gift', count: 0 });
 
-    const gift = {
-      type,
-      amount: amount || 0,
-      itemId: itemId || null,
-      from: req.adminUser.nickname,
-      date: new Date().toISOString(),
-      message: message || 'Подарок всем игрокам!'
-    };
-
-    let count = 0;
+    let totalSent = 0;
     for (const user of users) {
-      let gifts = user.gifts || [];
-      gifts.push(gift);
+      let userGifts = user.gifts || [];
 
-      if (type === 'coins') {
-        const currentCoins = user.coins || 0;
-        await query('UPDATE users SET coins = $1 WHERE id = $2', [currentCoins + amount, user.id]);
-      } else if (type === 'plant') {
-        const unlocked = (user.unlocked_plants || [1, 2, 3]).map(Number);
-        if (!unlocked.includes(Number(itemId))) {
-          await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [Number(itemId), user.id]);
-        }
-      } else if (type === 'zombie') {
-        const unlocked = (user.unlocked_zombies || [1, 2, 3]).map(Number);
-        if (!unlocked.includes(Number(itemId))) {
-          await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [Number(itemId), user.id]);
-        }
-      } else if (type === 'role') {
-        const validRoles = ['player', 'moderator', 'super_player', 'vip'];
-        if (validRoles.includes(itemId)) {
-          await query('UPDATE users SET role = $1 WHERE id = $2', [itemId, user.id]);
-          if (io) io.emit('role_updated', { userId: user.id, role: itemId });
+      for (const g of gifts) {
+        if (!validTypes.includes(g.type)) continue;
+
+        userGifts.push({
+          type: g.type,
+          amount: g.amount || 0,
+          itemId: g.itemId || null,
+          from: req.adminUser.nickname,
+          date: new Date().toISOString(),
+          message: g.message || message || 'Подарок всем игрокам!'
+        });
+
+        if (g.type === 'coins') {
+          const currentCoins = user.coins || 0;
+          await query('UPDATE users SET coins = $1 WHERE id = $2', [currentCoins + (g.amount || 0), user.id]);
+        } else if (g.type === 'plant') {
+          const unlocked = (user.unlocked_plants || [1, 2, 3]).map(Number);
+          if (!unlocked.includes(Number(g.itemId))) {
+            await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [Number(g.itemId), user.id]);
+          }
+        } else if (g.type === 'zombie') {
+          const unlocked = (user.unlocked_zombies || [1, 2, 3]).map(Number);
+          if (!unlocked.includes(Number(g.itemId))) {
+            await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [Number(g.itemId), user.id]);
+          }
+        } else if (g.type === 'role') {
+          const validRoles = ['player', 'moderator', 'super_player', 'vip'];
+          if (validRoles.includes(g.itemId)) {
+            await query('UPDATE users SET role = $1 WHERE id = $2', [g.itemId, user.id]);
+            if (io) io.emit('role_updated', { userId: user.id, role: g.itemId });
+          }
         }
       }
 
-      await query('UPDATE users SET gifts = $1 WHERE id = $2', [gifts, user.id]);
-      count++;
+      await query('UPDATE users SET gifts = $1 WHERE id = $2', [userGifts, user.id]);
+      totalSent++;
     }
 
-    const typeNames = { coins: 'монеты', plant: 'растение', zombie: 'зомби', box: 'бокс', role: 'роль' };
-    res.json({ message: `Подарок отправлен ${count} игрокам: ${amount || ''} ${typeNames[type]}`, count });
+    res.json({ message: `Подарки отправлены ${totalSent} игрокам`, count: totalSent });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

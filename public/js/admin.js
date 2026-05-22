@@ -49,7 +49,7 @@ function showDashboard() {
   document.getElementById('dashboard').classList.add('active');
   loadGiftUsers();
   loadShopItems();
-  onGiftTypeChange();
+  addGiftRow();
 }
 
 async function loadUsers() {
@@ -217,6 +217,7 @@ async function loadGiftUsers() {
 }
 
 let shopItems = { plants: [], zombies: [], boxes: [] };
+let giftRowCounter = 0;
 
 async function loadShopItems() {
   try {
@@ -233,11 +234,46 @@ async function loadShopItems() {
   }
 }
 
-function onGiftTypeChange() {
-  const type = document.getElementById('gift-type').value;
-  const wrapper = document.getElementById('gift-item-wrapper');
-  const itemSelect = document.getElementById('gift-item-select');
-  const amountInput = document.getElementById('gift-amount');
+function addGiftRow() {
+  const id = ++giftRowCounter;
+  const container = document.getElementById('gift-rows');
+  const row = document.createElement('div');
+  row.className = 'gift-form';
+  row.id = 'gift-row-' + id;
+  row.style.marginBottom = '8px';
+  row.innerHTML = `
+    <select class="gift-select gift-type" onchange="onGiftRowTypeChange(${id})" data-row="${id}">
+      <option value="coins">🪙 Монеты</option>
+      <option value="plant">🌱 Растение</option>
+      <option value="zombie">🧟 Зомби</option>
+      <option value="box">🎁 Бокс</option>
+      <option value="role">👑 Роль</option>
+    </select>
+    <div class="gift-item-wrapper" id="gift-item-wrapper-${id}" style="display:none;">
+      <select class="gift-select gift-item-select" id="gift-item-select-${id}">
+        <option value="">Выберите...</option>
+      </select>
+    </div>
+    <input type="number" class="gift-input gift-amount" id="gift-amount-${id}" placeholder="Кол-во" />
+    <button class="action-btn btn-ban" onclick="removeGiftRow(${id})" style="font-size:14px;">✕</button>
+  `;
+  container.appendChild(row);
+  onGiftRowTypeChange(id);
+  if (container.children.length === 1) {
+    // first row — also show by default
+  }
+}
+
+function removeGiftRow(id) {
+  const row = document.getElementById('gift-row-' + id);
+  if (row) row.remove();
+}
+
+function onGiftRowTypeChange(id) {
+  const type = document.querySelector(`#gift-row-${id} .gift-type`).value;
+  const wrapper = document.getElementById('gift-item-wrapper-' + id);
+  const itemSelect = document.getElementById('gift-item-select-' + id);
+  const amountInput = document.getElementById('gift-amount-' + id);
 
   itemSelect.innerHTML = '<option value="">Выберите...</option>';
 
@@ -289,11 +325,32 @@ function onGiftTypeChange() {
   }
 }
 
+function collectGiftRows() {
+  const rows = document.querySelectorAll('#gift-rows .gift-form');
+  const gifts = [];
+  rows.forEach(row => {
+    const type = row.querySelector('.gift-type').value;
+    const itemSelect = row.querySelector('.gift-item-select');
+    const amountInput = row.querySelector('.gift-amount');
+    const itemId = itemSelect ? itemSelect.value : '';
+    const amount = parseInt(amountInput ? amountInput.value : '0') || 0;
+
+    let finalItemId = null;
+    let finalAmount = 0;
+    if (type === 'coins') {
+      if (amount <= 0) return;
+      finalAmount = amount;
+    } else {
+      if (!itemId) return;
+      finalItemId = type === 'role' ? itemId : parseInt(itemId);
+    }
+    gifts.push({ type, amount: finalAmount, itemId: finalItemId });
+  });
+  return gifts;
+}
+
 async function sendGift() {
   const userId = document.getElementById('gift-user').value;
-  const type = document.getElementById('gift-type').value;
-  const amount = parseInt(document.getElementById('gift-amount').value) || 0;
-  const itemId = document.getElementById('gift-item-select').value;
   const message = document.getElementById('gift-message').value.trim();
   const resultEl = document.getElementById('gift-result');
 
@@ -303,37 +360,27 @@ async function sendGift() {
     return;
   }
 
-  let finalItemId = null;
-  let finalAmount = 0;
-
-  if (type === 'coins') {
-    if (amount <= 0) {
-      resultEl.className = 'error';
-      resultEl.textContent = 'Укажите количество монет';
-      return;
-    }
-    finalAmount = amount;
-  } else {
-    if (!itemId) {
-      resultEl.className = 'error';
-      resultEl.textContent = 'Выберите предмет';
-      return;
-    }
-    finalItemId = type === 'role' ? itemId : parseInt(itemId);
+  const gifts = collectGiftRows();
+  if (gifts.length === 0) {
+    resultEl.className = 'error';
+    resultEl.textContent = 'Добавьте хотя бы один подарок';
+    return;
   }
 
   try {
     const res = await fetch(API + '/gift/' + userId, {
       method: 'POST',
       headers: { ...headers(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, amount: finalAmount, itemId: finalItemId, message })
+      body: JSON.stringify({ gifts, message })
     });
     const data = await res.json();
     if (res.ok) {
       resultEl.className = 'success';
       resultEl.textContent = '✅ ' + data.message;
-      document.getElementById('gift-amount').value = '';
       document.getElementById('gift-message').value = '';
+      document.getElementById('gift-rows').innerHTML = '';
+      giftRowCounter = 0;
+      addGiftRow();
       loadUsers();
       loadGiftUsers();
     } else {
@@ -347,45 +394,32 @@ async function sendGift() {
 }
 
 async function sendGiftAll() {
-  const type = document.getElementById('gift-type').value;
-  const amount = parseInt(document.getElementById('gift-amount').value) || 0;
-  const itemId = document.getElementById('gift-item-select').value;
   const message = document.getElementById('gift-message').value.trim();
   const resultEl = document.getElementById('gift-result');
 
-  let finalItemId = null;
-  let finalAmount = 0;
-
-  if (type === 'coins') {
-    if (amount <= 0) {
-      resultEl.className = 'error';
-      resultEl.textContent = 'Укажите количество монет';
-      return;
-    }
-    finalAmount = amount;
-  } else {
-    if (!itemId) {
-      resultEl.className = 'error';
-      resultEl.textContent = 'Выберите предмет';
-      return;
-    }
-    finalItemId = type === 'role' ? itemId : parseInt(itemId);
+  const gifts = collectGiftRows();
+  if (gifts.length === 0) {
+    resultEl.className = 'error';
+    resultEl.textContent = 'Добавьте хотя бы один подарок';
+    return;
   }
 
-  if (!confirm(`Отправить подарок всем игрокам? (${type})`)) return;
+  if (!confirm(`Отправить ${gifts.length} подарков всем игрокам?`)) return;
 
   try {
     const res = await fetch(API + '/gift-all', {
       method: 'POST',
       headers: { ...headers(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, amount: finalAmount, itemId: finalItemId, message })
+      body: JSON.stringify({ gifts, message })
     });
     const data = await res.json();
     if (res.ok) {
       resultEl.className = 'success';
       resultEl.textContent = '✅ ' + data.message;
-      document.getElementById('gift-amount').value = '';
       document.getElementById('gift-message').value = '';
+      document.getElementById('gift-rows').innerHTML = '';
+      giftRowCounter = 0;
+      addGiftRow();
       loadUsers();
       loadGiftUsers();
     } else {

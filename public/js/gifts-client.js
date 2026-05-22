@@ -43,7 +43,11 @@ async function claimGift(index) {
       } else {
         showToast('✅ Подарок забран!');
       }
-      loadGifts();
+      const card = document.querySelector(`.gift-card[data-index="${index}"]`);
+      if (card) card.remove();
+      if (!document.querySelector('.gift-card')) {
+        document.getElementById('gifts-list').innerHTML = '<div class="empty-msg">Пока нет подарков 🎁</div>';
+      }
     } else {
       showToast('❌ ' + data.error);
     }
@@ -82,16 +86,17 @@ async function loadGifts() {
     [...data.gifts].reverse().forEach(g => {
       const div = document.createElement('div');
       div.className = 'gift-card';
+      div.dataset.index = g.index;
       let detail = '';
       if (g.type === 'coins') detail = `${g.amount} 🪙`;
       else if (g.type === 'role') detail = roleNames[g.itemId] || g.itemId;
       else detail = `ID: ${g.itemId}`;
 
-      const canClaim = !g.claimed && ['coins', 'plant', 'zombie', 'box', 'role'].includes(g.type);
+      const canClaim = ['coins', 'plant', 'zombie', 'box', 'role'].includes(g.type);
       div.innerHTML = `
         <div class="gift-icon">${typeIcons[g.type]}</div>
         <div class="gift-info">
-          <div class="gift-type">${typeNames[g.type]} — ${detail} ${g.claimed ? '<span style="color:#4CAF50;font-size:12px;">✅ Забрано</span>' : ''}</div>
+          <div class="gift-type">${typeNames[g.type]} — ${detail}</div>
           <div class="gift-from">От: ${g.from}</div>
           ${g.message ? `<div class="gift-message">"${g.message}"</div>` : ''}
           <div class="gift-date">${new Date(g.date).toLocaleDateString('ru-RU')}</div>

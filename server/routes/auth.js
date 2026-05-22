@@ -229,7 +229,7 @@ router.post('/gifts/claim/:giftIndex', async (req, res) => {
       reward = { type: 'role', id: gift.itemId };
     }
 
-    gifts[giftIndex].claimed = true;
+    gifts.splice(giftIndex, 1);
     await query('UPDATE users SET gifts = $1 WHERE id = $2', [gifts, userId]);
 
     res.json({ message: 'Gift claimed', reward });

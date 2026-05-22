@@ -222,6 +222,7 @@
     }
     .gift-select { min-width: 150px; }
     .gift-input { min-width: 120px; flex: 1; }
+    .gift-item-wrapper { display: inline-block; }
     .gift-btn {
       padding: 10px 24px;
       border: none;
@@ -346,21 +347,12 @@
         <select id="gift-user" class="gift-select">
           <option value="">Выберите игрока</option>
         </select>
-        <select id="gift-type" class="gift-select" onchange="onGiftTypeChange()">
-          <option value="coins">🪙 Монеты</option>
-          <option value="plant">🌱 Растение</option>
-          <option value="zombie">🧟 Зомби</option>
-          <option value="box"> Бокс</option>
-          <option value="role">👑 Роль</option>
-        </select>
-        <div id="gift-item-wrapper" style="display:none;">
-          <select id="gift-item-select" class="gift-select">
-            <option value="">Выберите...</option>
-          </select>
-        </div>
-        <input type="number" id="gift-amount" class="gift-input" placeholder="Кол-во" />
-        <input type="text" id="gift-message" class="gift-input" placeholder="Сообщение (необязательно)" />
-        <button class="gift-btn" onclick="sendGift()">🎁 Отправить</button>
+        <input type="text" id="gift-message" class="gift-input" placeholder="Сообщение (общее)" />
+      </div>
+      <div id="gift-rows" style="margin-top:10px;"></div>
+      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="gift-btn" onclick="addGiftRow()">➕ Добавить подарок</button>
+        <button class="gift-btn" onclick="sendGift()">🎁 Отправить выбранному</button>
         <button class="gift-btn gift-all-btn" onclick="sendGiftAll()">🎁 Подарок всем</button>
       </div>
       <div id="gift-result"></div>
