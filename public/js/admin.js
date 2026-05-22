@@ -13,6 +13,7 @@ if (!currentUser) {
   document.getElementById('dashboard').classList.remove('active');
   document.getElementById('login-error').textContent = 'Доступ только для аккаунта "admin"';
 } else {
+  adminSocket.emit('user_online', currentUser.id);
   verifyAdmin();
 }
 

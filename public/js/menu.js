@@ -156,7 +156,10 @@ function updateLeaderboardOnlineStatus() {
 }
 
 window.authReady.then(() => {
-  if (currentUser) updateUserInfo();
+  if (currentUser) {
+    socket.emit('user_online', currentUser.id);
+    updateUserInfo();
+  }
   else renderAccountSwitcher();
 });
 

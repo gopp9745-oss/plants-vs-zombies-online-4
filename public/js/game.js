@@ -100,6 +100,10 @@ function init() {
   document.getElementById('opponent-info').textContent = 
     role === 'plant' ? `🧟 Противник: ${zombieNickname}` : `🌻 Противник: ${plantNickname}`;
 
+  if (currentUser) {
+    socket.emit('user_online', currentUser.id);
+  }
+
   loadItems();
   setupEventListeners();
   updatePlayerStatus();

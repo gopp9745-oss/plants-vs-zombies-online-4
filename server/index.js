@@ -34,7 +34,30 @@ app.use('/api/friends', friendsRoutes);
 
 const readyStates = {};
 const GAME_DURATION = 300;
-const userSockets = {}; // 5 minutes in seconds
+const userSockets = {};
+const onlineUsers = {};
+const ONLINE_TIMEOUT = 60000;
+
+function broadcastOnlineUsers() {
+  io.emit('online_users', Object.keys(onlineUsers));
+}
+
+function addOnlineUser(userId, socketId) {
+  onlineUsers[userId] = (onlineUsers[userId] || 0) + 1;
+  userSockets[userId] = socketId;
+  broadcastOnlineUsers();
+}
+
+function removeOnlineUser(userId) {
+  if (onlineUsers[userId]) {
+    onlineUsers[userId]--;
+    if (onlineUsers[userId] <= 0) {
+      delete onlineUsers[userId];
+    }
+  }
+  delete userSockets[userId];
+  broadcastOnlineUsers();
+}
 
 function safeEndGame(gameId, winner) {
   try {
@@ -46,14 +69,18 @@ function safeEndGame(gameId, winner) {
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  socket.emit('online_users', Object.keys(userSockets));
+  socket.emit('online_users', Object.keys(onlineUsers));
 
   let currentUserId = null;
 
+  socket.on('user_online', (userId) => {
+    currentUserId = userId;
+    addOnlineUser(userId, socket.id);
+  });
+
   socket.on('join_game', async ({ userId, role, loadout, nickname }) => {
     currentUserId = userId;
-    userSockets[userId] = socket.id;
-    io.emit('online_users', Object.keys(userSockets));
+    addOnlineUser(userId, socket.id);
 
     const gameId = gameManager.findMatch(userId, role, loadout, nickname, socket.id);
 
@@ -179,9 +206,8 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     if (currentUserId) {
-      delete userSockets[currentUserId];
+      removeOnlineUser(currentUserId);
       gameManager.cancelWait(currentUserId);
-      io.emit('online_users', Object.keys(userSockets));
 
       for (const gameId in gameManager.games) {
         const game = gameManager.games[gameId];
@@ -231,8 +257,7 @@ io.on('connection', (socket) => {
 
   socket.on('friendly_match', ({ userId, role, loadout, nickname, friendId }) => {
     currentUserId = userId;
-    userSockets[userId] = socket.id;
-    io.emit('online_users', Object.keys(userSockets));
+    addOnlineUser(userId, socket.id);
     const gameId = `friendly_${Date.now()}`;
     gameManager.games[gameId] = {
       id: gameId,
@@ -257,8 +282,7 @@ io.on('connection', (socket) => {
 
   socket.on('friend_join_match', ({ userId, role, loadout, nickname, gameId, friendId }) => {
     currentUserId = userId;
-    userSockets[userId] = socket.id;
-    io.emit('online_users', Object.keys(userSockets));
+    addOnlineUser(userId, socket.id);
     const game = gameManager.games[gameId];
     if (!game) return;
     game[role === 'plant' ? 'plantId' : 'zombieId'] = userId;

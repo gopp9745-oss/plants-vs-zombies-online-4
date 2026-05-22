@@ -273,6 +273,10 @@ function initFriendsPage() {
   }
   console.log('Friends page initialized');
 
+  if (currentUser) {
+    socket.emit('user_online', currentUser.id);
+  }
+
   input.addEventListener('input', (e) => {
     console.log('Input event, value:', e.target.value);
     clearTimeout(searchTimeout);
