@@ -193,11 +193,17 @@ router.post('/gifts/claim/:giftIndex', async (req, res) => {
       const pool = Math.random() < 0.5 ? BOX_REWARDS[0] : BOX_REWARDS[1];
       const unlocked = pool.type === 'plant' ? unlockedPlants : unlockedZombies;
       const available = pool.ids.filter(id => !unlocked.includes(id));
-      const wonId = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : pool.ids[0];
-      const updateField = pool.type === 'plant' ? 'unlocked_plants' : 'unlocked_zombies';
-      await query(`UPDATE users SET ${updateField} = $1 WHERE id = $2`, [wonId, userId]);
-      const info = getItemInfo(wonId, pool.type === 'plant' ? PLANTS : ZOMBIES);
-      reward = { type: pool.type, id: wonId, name: info.name, emoji: info.emoji };
+      if (available.length === 0) {
+        const consolation = 50;
+        await query('UPDATE users SET coins = $1 WHERE id = $2', [(u.coins || 0) + consolation, userId]);
+        reward = { type: 'coins', amount: consolation, name: 'Утешительный приз', emoji: '🪙' };
+      } else {
+        const wonId = available[Math.floor(Math.random() * available.length)];
+        const updateField = pool.type === 'plant' ? 'unlocked_plants' : 'unlocked_zombies';
+        await query(`UPDATE users SET ${updateField} = $1 WHERE id = $2`, [wonId, userId]);
+        const info = getItemInfo(wonId, pool.type === 'plant' ? PLANTS : ZOMBIES);
+        reward = { type: pool.type, id: wonId, name: info.name, emoji: info.emoji };
+      }
     } else if (gift.type === 'coins') {
       const amount = gift.amount || 0;
       const currentCoins = u.coins || 0;

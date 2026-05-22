@@ -9,7 +9,7 @@ function showBoxAnimation(reward) {
       <div class="reward-result">
         <div class="reward-emoji">${reward.emoji || '?'}</div>
         <div class="reward-label">${reward.name || 'Неизвестно'}</div>
-        <div class="reward-subtitle">${reward.type === 'plant' ? '🌱 Растение' : '🧟 Зомби'} получено!</div>
+        <div class="reward-subtitle">${reward.type === 'plant' ? '🌱 Растение' : reward.type === 'coins' ? '🪙 +' + reward.amount : '🧟 Зомби'} получено!</div>
       </div>
     </div>
   `;
@@ -38,7 +38,7 @@ async function claimGift(index) {
     });
     const data = await res.json();
     if (res.ok) {
-      if (data.reward && data.reward.type !== 'coins' && data.reward.type !== 'role') {
+      if (data.reward && data.reward.emoji) {
         showBoxAnimation(data.reward);
       } else {
         showToast('✅ Подарок забран!');
