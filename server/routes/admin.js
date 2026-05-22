@@ -1,11 +1,11 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { query } = require('../db');
+const router = express.Router();
 
 const ADMIN_NICKNAME = 'admin';
-
-module.exports = function(io) {
-const router = express.Router();
+let io = null;
+function setSocketIO(socketIO) { io = socketIO; }
 
 async function authMiddleware(req, res, next) {
   const userId = req.headers['x-user-id'];
@@ -229,4 +229,4 @@ router.post('/gift-all', authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
-};
+module.exports.setSocketIO = setSocketIO;
