@@ -99,7 +99,7 @@ async function mongoQuery(sql, params) {
   if (sql.startsWith('SELECT') && sql.includes('FROM users WHERE id')) {
     const user = await User.findById(params[0]);
     if (!user) return { rows: [] };
-    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, avatar: user.avatar || 'рџЊ±', clan: user.clan || '', friends: user.friends || [], friend_requests: user.friend_requests || [], is_admin: user.is_admin || false, is_banned: user.is_banned || false, role: user.role || 'player', unlocked_plants: user.unlocked_plants || [1, 2, 3], unlocked_zombies: user.unlocked_zombies || [1, 2, 3] }] };
+    return { rows: [{ id: user._id.toString(), nickname: user.nickname, wins: user.wins, losses: user.losses, coins: user.coins || 0, avatar: user.avatar || 'рџЊ±', clan: user.clan || '', friends: user.friends || [], friend_requests: user.friend_requests || [], gifts: user.gifts || [], is_admin: user.is_admin || false, is_banned: user.is_banned || false, role: user.role || 'player', unlocked_plants: user.unlocked_plants || [1, 2, 3], unlocked_zombies: user.unlocked_zombies || [1, 2, 3] }] };
   }
 
   if (sql.includes('ORDER BY wins DESC')) {
@@ -153,7 +153,7 @@ async function mongoQuery(sql, params) {
 
   if (sql.includes('SELECT') && sql.includes('FROM users') && sql.includes('ORDER BY')) {
     const users = await User.find().sort({ createdAt: -1 }).lean();
-    return { rows: users.map(u => ({ id: u._id.toString(), nickname: u.nickname, wins: u.wins, losses: u.losses, is_admin: u.is_admin || false, is_banned: u.is_banned || false, role: u.role || 'player', created_at: u.createdAt })) };
+    return { rows: users.map(u => ({ id: u._id.toString(), nickname: u.nickname, wins: u.wins, losses: u.losses, coins: u.coins || 0, avatar: u.avatar || 'рџЊ±', clan: u.clan || '', friends: u.friends || [], friend_requests: u.friend_requests || [], gifts: u.gifts || [], is_admin: u.is_admin || false, is_banned: u.is_banned || false, role: u.role || 'player', unlocked_plants: u.unlocked_plants || [1, 2, 3], unlocked_zombies: u.unlocked_zombies || [1, 2, 3], created_at: u.createdAt })) };
   }
 
   if (sql.includes('UPDATE users SET is_admin')) {
@@ -398,7 +398,7 @@ function fileQuery(sql, params) {
   }
 
   if (sql.includes('SELECT') && sql.includes('FROM users') && sql.includes('ORDER BY')) {
-    return { rows: fileDb.users.map(u => ({ id: u.id, nickname: u.nickname, wins: u.wins, losses: u.losses, is_admin: u.is_admin || false, is_banned: u.is_banned || false, role: u.role || 'player', created_at: u.created_at })) };
+    return { rows: fileDb.users.map(u => ({ id: u.id, nickname: u.nickname, wins: u.wins, losses: u.losses, coins: u.coins || 0, avatar: u.avatar || 'рџЊ±', clan: u.clan || '', friends: u.friends || [], friend_requests: u.friend_requests || [], gifts: u.gifts || [], is_admin: u.is_admin || false, is_banned: u.is_banned || false, role: u.role || 'player', unlocked_plants: u.unlocked_plants || [1, 2, 3], unlocked_zombies: u.unlocked_zombies || [1, 2, 3], created_at: u.created_at })) };
   }
 
   if (sql.includes('DELETE FROM users')) {
