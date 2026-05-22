@@ -181,8 +181,8 @@ router.post('/gifts/claim/:giftIndex', async (req, res) => {
       return list.find(i => i.id === id) || { name: 'Неизвестно', emoji: '❓' };
     }
 
-    const unlockedPlants = u.unlocked_plants || [1, 2, 3];
-    const unlockedZombies = u.unlocked_zombies || [1, 2, 3];
+    const unlockedPlants = (u.unlocked_plants || [1, 2, 3]).map(Number);
+    const unlockedZombies = (u.unlocked_zombies || [1, 2, 3]).map(Number);
     let reward = null;
 
     if (gift.type === 'box') {
@@ -210,17 +210,17 @@ router.post('/gifts/claim/:giftIndex', async (req, res) => {
       await query('UPDATE users SET coins = $1 WHERE id = $2', [currentCoins + amount, userId]);
       reward = { type: 'coins', amount };
     } else if (gift.type === 'plant') {
-      if (!unlockedPlants.includes(gift.itemId)) {
-        await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [gift.itemId, userId]);
+      if (!unlockedPlants.includes(Number(gift.itemId))) {
+        await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [Number(gift.itemId), userId]);
       }
-      const info = getItemInfo(gift.itemId, PLANTS);
-      reward = { type: 'plant', id: gift.itemId, name: info.name, emoji: info.emoji };
+      const info = getItemInfo(Number(gift.itemId), PLANTS);
+      reward = { type: 'plant', id: Number(gift.itemId), name: info.name, emoji: info.emoji };
     } else if (gift.type === 'zombie') {
-      if (!unlockedZombies.includes(gift.itemId)) {
-        await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [gift.itemId, userId]);
+      if (!unlockedZombies.includes(Number(gift.itemId))) {
+        await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [Number(gift.itemId), userId]);
       }
-      const info = getItemInfo(gift.itemId, ZOMBIES);
-      reward = { type: 'zombie', id: gift.itemId, name: info.name, emoji: info.emoji };
+      const info = getItemInfo(Number(gift.itemId), ZOMBIES);
+      reward = { type: 'zombie', id: Number(gift.itemId), name: info.name, emoji: info.emoji };
     } else if (gift.type === 'role') {
       const validRoles = ['player', 'moderator', 'super_player', 'vip'];
       if (validRoles.includes(gift.itemId)) {

@@ -71,8 +71,8 @@ router.get('/unlocked/:userId', async (req, res) => {
     const result = await query('SELECT * FROM users WHERE id = $1', [req.params.userId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     const u = result.rows[0];
-    const unlockedPlants = u.unlocked_plants || [1, 2, 3];
-    const unlockedZombies = u.unlocked_zombies || [1, 2, 3];
+    const unlockedPlants = (u.unlocked_plants || [1, 2, 3]).map(Number);
+    const unlockedZombies = (u.unlocked_zombies || [1, 2, 3]).map(Number);
     const plants = ALL_PLANTS.map(p => ({ ...p, unlocked: unlockedPlants.includes(p.id) }));
     const zombies = ALL_ZOMBIES.map(z => ({ ...z, unlocked: unlockedZombies.includes(z.id) }));
     res.json({ coins: u.coins || 0, plants, zombies });
@@ -141,8 +141,8 @@ router.post('/open-box/:userId', async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     const u = result.rows[0];
     const coins = u.coins || 0;
-    const unlockedPlants = u.unlocked_plants || [1, 2, 3];
-    const unlockedZombies = u.unlocked_zombies || [1, 2, 3];
+    const unlockedPlants = (u.unlocked_plants || [1, 2, 3]).map(Number);
+    const unlockedZombies = (u.unlocked_zombies || [1, 2, 3]).map(Number);
 
     if (coins < box.price) return res.status(400).json({ error: 'Not enough coins', need: box.price, have: coins });
 

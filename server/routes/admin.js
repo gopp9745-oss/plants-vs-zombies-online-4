@@ -135,14 +135,14 @@ router.post('/gift/:userId', authMiddleware, async (req, res) => {
       const currentCoins = target.coins || 0;
       await query('UPDATE users SET coins = $1 WHERE id = $2', [currentCoins + amount, targetId]);
     } else if (type === 'plant') {
-      const unlocked = target.unlocked_plants || [1, 2, 3];
-      if (!unlocked.includes(itemId)) {
-        await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [itemId, targetId]);
+      const unlocked = (target.unlocked_plants || [1, 2, 3]).map(Number);
+      if (!unlocked.includes(Number(itemId))) {
+        await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [Number(itemId), targetId]);
       }
     } else if (type === 'zombie') {
-      const unlocked = target.unlocked_zombies || [1, 2, 3];
-      if (!unlocked.includes(itemId)) {
-        await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [itemId, targetId]);
+      const unlocked = (target.unlocked_zombies || [1, 2, 3]).map(Number);
+      if (!unlocked.includes(Number(itemId))) {
+        await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [Number(itemId), targetId]);
       }
     } else if (type === 'role') {
       const validRoles = ['player', 'moderator', 'super_player', 'vip'];
@@ -200,14 +200,14 @@ router.post('/gift-all', authMiddleware, async (req, res) => {
         const currentCoins = user.coins || 0;
         await query('UPDATE users SET coins = $1 WHERE id = $2', [currentCoins + amount, user.id]);
       } else if (type === 'plant') {
-        const unlocked = user.unlocked_plants || [1, 2, 3];
-        if (!unlocked.includes(itemId)) {
-          await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [itemId, user.id]);
+        const unlocked = (user.unlocked_plants || [1, 2, 3]).map(Number);
+        if (!unlocked.includes(Number(itemId))) {
+          await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [Number(itemId), user.id]);
         }
       } else if (type === 'zombie') {
-        const unlocked = user.unlocked_zombies || [1, 2, 3];
-        if (!unlocked.includes(itemId)) {
-          await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [itemId, user.id]);
+        const unlocked = (user.unlocked_zombies || [1, 2, 3]).map(Number);
+        if (!unlocked.includes(Number(itemId))) {
+          await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [Number(itemId), user.id]);
         }
       } else if (type === 'role') {
         const validRoles = ['player', 'moderator', 'super_player', 'vip'];
