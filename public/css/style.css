@@ -619,6 +619,22 @@ body {
   align-items: center;
 }
 
+.online-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #666;
+  margin-right: 4px;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.online-dot.online {
+  background: #4CAF50;
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.6);
+}
+
 #leaderboard-table {
   width: 100%;
   max-width: 700px;

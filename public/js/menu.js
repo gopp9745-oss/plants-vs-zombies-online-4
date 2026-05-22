@@ -81,14 +81,16 @@ async function loadLeaderboard() {
     tbody.innerHTML = '';
     data.forEach((player, index) => {
       const row = document.createElement('tr');
+      row.dataset.playerId = player.id;
       const isMe = currentUser && String(player.nickname) === String(currentUser.nickname);
       if (isMe) row.className = 'my-row';
       const rank = getRank(player.wins || 0);
       const avatar = player.avatar || '🌱';
+      const isOnline = onlineUserIds.includes(player.id);
       const clanTag = player.clan ? ` <span class="clan-tag">🏰 ${player.clan}</span>` : '';
       row.innerHTML = `
         <td class="rank">${getRankBadge(index + 1)}</td>
-        <td><span class="lb-player"><span class="lb-avatar">${avatar}</span>${player.nickname || '???'}<span class="rank-badge" style="color:${rank.color}">${rank.emoji} ${rank.name}</span>${clanTag}</span></td>
+        <td><span class="lb-player"><span class="lb-avatar">${avatar}</span><span class="online-dot ${isOnline ? 'online' : ''}"></span>${player.nickname || '???'}<span class="rank-badge" style="color:${rank.color}">${rank.emoji} ${rank.name}</span>${clanTag}</span></td>
         <td class="wins">${player.wins ?? 0}</td>
         <td class="losses">${player.losses ?? 0}</td>
         <td>${player.total_games ?? 0}</td>
@@ -133,6 +135,25 @@ socket.on('match_found', ({ gameId, role, plantNickname, zombieNickname }) => {
 
 socket.on('waiting_for_opponent', () => console.log('Waiting...'));
 socket.on('wait_cancelled', () => showScreen('role-select'));
+
+let onlineUserIds = [];
+
+socket.on('online_users', (ids) => {
+  onlineUserIds = ids || [];
+  updateLeaderboardOnlineStatus();
+  if (typeof renderAccountSwitcher === 'function') renderAccountSwitcher();
+});
+
+function updateLeaderboardOnlineStatus() {
+  document.querySelectorAll('#leaderboard-body tr').forEach(row => {
+    if (!row.dataset.playerId) return;
+    const dot = row.querySelector('.online-dot');
+    if (!dot) return;
+    const isOnline = onlineUserIds.includes(row.dataset.playerId);
+    dot.className = `online-dot ${isOnline ? 'online' : ''}`;
+    dot.title = isOnline ? 'В сети' : 'Не в сети';
+  });
+}
 
 window.authReady.then(() => {
   if (currentUser) updateUserInfo();

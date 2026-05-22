@@ -3,6 +3,24 @@ const socket = io();
 
 var searchResult = null;
 var searchTimeout = null;
+var onlineUserIds = [];
+
+socket.on('online_users', (ids) => {
+  onlineUserIds = ids || [];
+  updateFriendsOnlineStatus();
+});
+
+function updateFriendsOnlineStatus() {
+  document.querySelectorAll('.friend-card').forEach(card => {
+    const friendId = card.dataset.friendId;
+    if (!friendId) return;
+    const dot = card.querySelector('.online-dot');
+    if (!dot) return;
+    const isOnline = onlineUserIds.includes(friendId);
+    dot.className = `online-dot ${isOnline ? 'online' : ''}`;
+    dot.title = isOnline ? 'В сети' : 'Не в сети';
+  });
+}
 
 async function loadFriends() {
   if (!currentUser) return;
@@ -18,6 +36,7 @@ async function loadFriends() {
     friends.forEach(f => {
       const div = document.createElement('div');
       div.className = 'friend-card';
+      div.dataset.friendId = f.id;
       if (f.is_banned) {
         div.innerHTML = `
           <div class="friend-avatar banned">✕</div>
@@ -30,10 +49,11 @@ async function loadFriends() {
           </div>
         `;
       } else {
+        const isOnline = onlineUserIds.includes(f.id);
         div.innerHTML = `
           <div class="friend-avatar">${f.avatar}</div>
           <div class="friend-info">
-            <div class="friend-name">${f.nickname}</div>
+            <div class="friend-name">${f.nickname} <span class="online-dot ${isOnline ? 'online' : ''}" title="${isOnline ? 'В сети' : 'Не в сети'}"></span></div>
             <div class="friend-clan">🏰 ${f.clan || 'Без клана'}</div>
             <div class="friend-stats">🏆 ${f.wins} / 💀 ${f.losses}</div>
           </div>
