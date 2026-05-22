@@ -89,6 +89,7 @@ async function loadUsers() {
       actions += `<button class="action-btn btn-reset" onclick="resetStats('${u.id}')">Сброс</button>`;
       actions += `<button class="action-btn btn-admin" onclick="resetPassword('${u.id}')">Пароль</button>`;
       actions += `<button class="action-btn btn-gift" onclick="quickGift('${u.id}', '${u.nickname.replace(/'/g, "\\'")}')">🎁</button>`;
+      if (u.gifts && u.gifts.length > 0) actions += `<button class="action-btn" onclick="manageGifts('${u.id}', '${u.nickname.replace(/'/g, "\\'")}')">📦</button>`;
       actions += `<button class="action-btn btn-delete" onclick="deleteUser('${u.id}')">Удалить</button>`;
 
       tr.innerHTML = `
@@ -409,4 +410,39 @@ function showToast(msg) {
   toast.textContent = msg;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
+}
+
+async function manageGifts(userId, nickname) {
+  try {
+    const res = await fetch(API + '/users', { headers: headers() });
+    const users = await res.json();
+    const u = users.find(x => x.id === userId);
+    if (!u || !u.gifts || u.gifts.length === 0) {
+      showToast('Нет подарков у ' + nickname);
+      return;
+    }
+    const typeNames = { coins: 'Монеты', plant: 'Растение', zombie: 'Зомби', box: 'Бокс', role: 'Роль' };
+    let msg = 'Подарки ' + nickname + ':\n';
+    u.gifts.forEach((g, i) => {
+      msg += '\n' + (i+1) + '. ' + (typeNames[g.type] || g.type) + ' | от: ' + (g.from || '?') + ' | ' + new Date(g.date).toLocaleDateString('ru-RU');
+    });
+    msg += '\n\nВведите номер подарка для удаления (0 = отмена):';
+    const choice = prompt(msg);
+    if (!choice || choice === '0') return;
+    const idx = parseInt(choice) - 1;
+    if (idx < 0 || idx >= u.gifts.length) {
+      showToast('Неверный номер');
+      return;
+    }
+    const delRes = await fetch(API + '/gifts/' + userId + '/remove/' + idx, { method: 'DELETE', headers: headers() });
+    const data = await delRes.json();
+    if (delRes.ok) {
+      showToast('✅ Подарок удалён');
+      loadUsers();
+    } else {
+      showToast('❌ ' + data.error);
+    }
+  } catch (e) {
+    showToast('❌ Ошибка');
+  }
 }

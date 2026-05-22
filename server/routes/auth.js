@@ -129,7 +129,72 @@ router.get('/gifts/me', async (req, res) => {
     if (!userId) return res.status(400).json({ error: 'userId required' });
     const result = await query('SELECT * FROM users WHERE id = $1', [userId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    res.json({ gifts: result.rows[0].gifts || [], coins: result.rows[0].coins || 0 });
+    const u = result.rows[0];
+    const gifts = (u.gifts || []).map((g, i) => ({ ...g, index: i }));
+    res.json({ gifts, coins: u.coins || 0, unlocked_plants: u.unlocked_plants || [1, 2, 3], unlocked_zombies: u.unlocked_zombies || [1, 2, 3] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/gifts/claim/:giftIndex', async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'];
+    const giftIndex = parseInt(req.params.giftIndex);
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+
+    const result = await query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    const u = result.rows[0];
+    const gifts = u.gifts || [];
+
+    if (giftIndex < 0 || giftIndex >= gifts.length) return res.status(400).json({ error: 'Invalid gift index' });
+    const gift = gifts[giftIndex];
+    if (gift.claimed) return res.status(400).json({ error: 'Gift already claimed' });
+
+    const unlockedPlants = u.unlocked_plants || [1, 2, 3];
+    const unlockedZombies = u.unlocked_zombies || [1, 2, 3];
+    let reward = null;
+
+    if (gift.type === 'box') {
+      const BOX_REWARDS = [
+        { type: 'plant', ids: [2, 4, 5, 6, 7, 8] },
+        { type: 'zombie', ids: [2, 3, 4, 5, 6, 7, 8] },
+      ];
+      const pool = Math.random() < 0.5 ? BOX_REWARDS[0] : BOX_REWARDS[1];
+      const unlocked = pool.type === 'plant' ? unlockedPlants : unlockedZombies;
+      const available = pool.ids.filter(id => !unlocked.includes(id));
+      const wonId = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : pool.ids[0];
+      const updateField = pool.type === 'plant' ? 'unlocked_plants' : 'unlocked_zombies';
+      await query(`UPDATE users SET ${updateField} = $1 WHERE id = $2`, [wonId, userId]);
+      reward = { type: pool.type, id: wonId };
+    } else if (gift.type === 'coins') {
+      const amount = gift.amount || 0;
+      const currentCoins = u.coins || 0;
+      await query('UPDATE users SET coins = $1 WHERE id = $2', [currentCoins + amount, userId]);
+      reward = { type: 'coins', amount };
+    } else if (gift.type === 'plant') {
+      if (!unlockedPlants.includes(gift.itemId)) {
+        await query('UPDATE users SET unlocked_plants = $1 WHERE id = $2', [gift.itemId, userId]);
+      }
+      reward = { type: 'plant', id: gift.itemId };
+    } else if (gift.type === 'zombie') {
+      if (!unlockedZombies.includes(gift.itemId)) {
+        await query('UPDATE users SET unlocked_zombies = $1 WHERE id = $2', [gift.itemId, userId]);
+      }
+      reward = { type: 'zombie', id: gift.itemId };
+    } else if (gift.type === 'role') {
+      const validRoles = ['player', 'moderator', 'super_player', 'vip'];
+      if (validRoles.includes(gift.itemId)) {
+        await query('UPDATE users SET role = $1 WHERE id = $2', [gift.itemId, userId]);
+      }
+      reward = { type: 'role', id: gift.itemId };
+    }
+
+    gifts[giftIndex].claimed = true;
+    await query('UPDATE users SET gifts = $1 WHERE id = $2', [gifts, userId]);
+
+    res.json({ message: 'Gift claimed', reward });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
