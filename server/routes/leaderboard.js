@@ -4,7 +4,7 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    const result = await query('SELECT nickname, wins, losses, (wins + losses) as total_games FROM users WHERE is_banned = 0 ORDER BY wins DESC LIMIT 50');
+    const result = await query('SELECT id, nickname, wins, losses, (wins + losses) as total_games FROM users WHERE is_banned = 0 ORDER BY wins DESC LIMIT 50');
     res.json(result.rows);
   } catch (err) {
     console.error(err);

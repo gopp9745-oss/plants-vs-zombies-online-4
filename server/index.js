@@ -43,19 +43,21 @@ function broadcastOnlineUsers() {
 }
 
 function addOnlineUser(userId, socketId) {
-  onlineUsers[userId] = (onlineUsers[userId] || 0) + 1;
-  userSockets[userId] = socketId;
+  const key = String(userId);
+  onlineUsers[key] = (onlineUsers[key] || 0) + 1;
+  userSockets[key] = socketId;
   broadcastOnlineUsers();
 }
 
 function removeOnlineUser(userId) {
-  if (onlineUsers[userId]) {
-    onlineUsers[userId]--;
-    if (onlineUsers[userId] <= 0) {
-      delete onlineUsers[userId];
+  const key = String(userId);
+  if (onlineUsers[key]) {
+    onlineUsers[key]--;
+    if (onlineUsers[key] <= 0) {
+      delete onlineUsers[key];
     }
   }
-  delete userSockets[userId];
+  delete userSockets[key];
   broadcastOnlineUsers();
 }
 

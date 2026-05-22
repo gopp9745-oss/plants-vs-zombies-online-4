@@ -86,7 +86,7 @@ async function loadLeaderboard() {
       if (isMe) row.className = 'my-row';
       const rank = getRank(player.wins || 0);
       const avatar = player.avatar || '🌱';
-      const isOnline = onlineUserIds.includes(player.id);
+      const isOnline = onlineUserIds.includes(String(player.id));
       const clanTag = player.clan ? ` <span class="clan-tag">🏰 ${player.clan}</span>` : '';
       row.innerHTML = `
         <td class="rank">${getRankBadge(index + 1)}</td>

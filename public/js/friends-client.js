@@ -16,7 +16,7 @@ function updateFriendsOnlineStatus() {
     if (!friendId) return;
     const dot = card.querySelector('.online-dot');
     if (!dot) return;
-    const isOnline = onlineUserIds.includes(friendId);
+    const isOnline = onlineUserIds.includes(String(friendId));
     dot.className = `online-dot ${isOnline ? 'online' : ''}`;
     dot.title = isOnline ? 'В сети' : 'Не в сети';
   });
@@ -49,7 +49,7 @@ async function loadFriends() {
           </div>
         `;
       } else {
-        const isOnline = onlineUserIds.includes(f.id);
+        const isOnline = onlineUserIds.includes(String(f.id));
         div.innerHTML = `
           <div class="friend-avatar">${f.avatar}</div>
           <div class="friend-info">
