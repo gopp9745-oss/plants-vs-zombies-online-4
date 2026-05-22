@@ -1,5 +1,38 @@
 const API = window.location.origin + '/api/auth';
 
+const PLANT_EMOJIS = { 1: '🌻', 2: '🌱', 3: '🥜', 4: '🍒', 5: '❄️', 6: '🔁', 7: '💣', 8: '👯' };
+const ZOMBIE_EMOJIS = { 1: '🧟', 2: '🧟‍♂️', 3: '🪖', 4: '🏃', 5: '👹', 6: '💃', 7: '🏈', 8: '🎣' };
+
+function showBoxAnimation(reward) {
+  const overlay = document.createElement('div');
+  overlay.id = 'reward-overlay';
+  overlay.innerHTML = `
+    <div class="reward-container">
+      <div class="reward-box">🎁</div>
+      <div class="reward-result">
+        <div class="reward-emoji">${reward.type === 'plant' ? (PLANT_EMOJIS[reward.id] || '🌱') : (ZOMBIE_EMOJIS[reward.id] || '🧟')}</div>
+        <div class="reward-label">${reward.type === 'plant' ? '🌱 Растение' : '🧟 Зомби'} #${reward.id}</div>
+        <div class="reward-subtitle">${reward.type === 'coins' ? '🪙 +' + reward.amount : 'Получено из бокса!'}</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  requestAnimationFrame(() => {
+    overlay.querySelector('.reward-box').classList.add('shake');
+    setTimeout(() => {
+      overlay.querySelector('.reward-box').classList.add('open');
+      overlay.querySelector('.reward-result').classList.add('show');
+      setTimeout(() => {
+        overlay.addEventListener('click', () => {
+          overlay.classList.add('fade-out');
+          setTimeout(() => overlay.remove(), 400);
+        });
+      }, 200);
+    }, 800);
+  });
+}
+
 async function claimGift(index) {
   try {
     const res = await fetch(API + '/gifts/claim/' + index, {
@@ -8,7 +41,11 @@ async function claimGift(index) {
     });
     const data = await res.json();
     if (res.ok) {
-      showToast('✅ ' + (data.reward ? 'Награда получена!' : 'Подарок забран'));
+      if (data.reward && data.reward.type !== 'coins' && data.reward.type !== 'role') {
+        showBoxAnimation(data.reward);
+      } else {
+        showToast('✅ Подарок забран!');
+      }
       loadGifts();
     } else {
       showToast('❌ ' + data.error);
@@ -20,7 +57,7 @@ async function claimGift(index) {
 
 function showToast(msg) {
   const toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);color:#fff;padding:12px 24px;border-radius:10px;border:1px solid rgba(255,215,0,0.3);font-size:14px;z-index:9999;';
+  toast.className = 'toast';
   toast.textContent = msg;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
