@@ -1,9 +1,11 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { query } = require('../db');
-const router = express.Router();
 
 const ADMIN_NICKNAME = 'admin';
+
+module.exports = function(io) {
+const router = express.Router();
 
 async function authMiddleware(req, res, next) {
   const userId = req.headers['x-user-id'];
@@ -68,6 +70,9 @@ router.post('/users/:id/role', authMiddleware, async (req, res) => {
     if (!validRoles.includes(role)) return res.status(400).json({ error: 'Invalid role' });
     await query('UPDATE users SET role = $1 WHERE id = $2', [role, req.params.id]);
     const roleNames = { player: 'Игрок', moderator: 'Модератор', super_player: 'Сверх игрок', vip: 'V.I.P' };
+    if (io) {
+      io.emit('role_updated', { userId: req.params.id, role });
+    }
     res.json({ message: `Role set to ${roleNames[role]}` });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -143,6 +148,7 @@ router.post('/gift/:userId', authMiddleware, async (req, res) => {
       const validRoles = ['player', 'moderator', 'super_player', 'vip'];
       if (validRoles.includes(itemId)) {
         await query('UPDATE users SET role = $1 WHERE id = $2', [itemId, targetId]);
+        if (io) io.emit('role_updated', { userId: targetId, role: itemId });
       }
     }
 
@@ -207,6 +213,7 @@ router.post('/gift-all', authMiddleware, async (req, res) => {
         const validRoles = ['player', 'moderator', 'super_player', 'vip'];
         if (validRoles.includes(itemId)) {
           await query('UPDATE users SET role = $1 WHERE id = $2', [itemId, user.id]);
+          if (io) io.emit('role_updated', { userId: user.id, role: itemId });
         }
       }
 
@@ -222,3 +229,4 @@ router.post('/gift-all', authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+};

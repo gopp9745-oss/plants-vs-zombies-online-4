@@ -136,6 +136,14 @@ socket.on('match_found', ({ gameId, role, plantNickname, zombieNickname }) => {
 socket.on('waiting_for_opponent', () => console.log('Waiting...'));
 socket.on('wait_cancelled', () => showScreen('role-select'));
 
+socket.on('role_updated', ({ userId, role }) => {
+  if (currentUser && String(currentUser.id) === String(userId)) {
+    currentUser.role = role;
+    localStorage.setItem('pvz_user', JSON.stringify(currentUser));
+    updateUserInfo();
+  }
+});
+
 let onlineUserIds = [];
 
 socket.on('online_users', (ids) => {
