@@ -55,13 +55,6 @@ io.on('connection', (socket) => {
     userSockets[userId] = socket.id;
     io.emit('online_users', Object.keys(userSockets));
 
-    for (const gid in gameManager.games) {
-      const g = gameManager.games[gid];
-      if (!g.finished && (g.plantId === userId || g.zombieId === userId)) {
-        io.to(gid).emit('player_status_change', { userId, online: true });
-      }
-    }
-
     const gameId = gameManager.findMatch(userId, role, loadout, nickname, socket.id);
 
     if (gameId) {
