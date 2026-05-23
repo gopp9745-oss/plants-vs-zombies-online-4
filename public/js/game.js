@@ -154,9 +154,14 @@ function showReadyScreen() {
 
 async function loadItems() {
   try {
-    const res = await fetch(`${window.location.origin}/api/inventory/items`);
-    const data = await res.json();
-    const unlocked = currentUser?.unlocked_plants || [1, 2, 3];
+    if (!currentUser) return;
+    const [itemsRes, unlockedRes] = await Promise.all([
+      fetch(`${window.location.origin}/api/inventory/items`),
+      fetch(`${window.location.origin}/api/shop/unlocked/${currentUser.id}`)
+    ]);
+    const data = await itemsRes.json();
+    const unlockedData = await unlockedRes.json();
+    const unlocked = (unlockedData.unlocked_plants || [1, 2, 3]).map(Number);
     data.plants = data.plants.filter(p => unlocked.includes(p.id));
     itemsList = role === 'plant' ? data.plants.slice(0, 6) : data.zombies.slice(0, 6);
     renderActionBar();

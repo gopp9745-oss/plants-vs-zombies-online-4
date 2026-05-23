@@ -38,6 +38,31 @@ async function claimGift(index) {
     });
     const data = await res.json();
     if (res.ok) {
+      if (data.reward && data.reward.type === 'plant') {
+        // update currentUser in localStorage so game/shop see the new item
+        if (window.currentUser) {
+          window.currentUser.unlocked_plants = window.currentUser.unlocked_plants || [1,2,3];
+          if (!window.currentUser.unlocked_plants.includes(data.reward.id)) {
+            window.currentUser.unlocked_plants.push(data.reward.id);
+          }
+          localStorage.setItem('pvz_user', JSON.stringify(window.currentUser));
+        }
+      }
+      if (data.reward && data.reward.type === 'zombie') {
+        if (window.currentUser) {
+          window.currentUser.unlocked_zombies = window.currentUser.unlocked_zombies || [1,2,3];
+          if (!window.currentUser.unlocked_zombies.includes(data.reward.id)) {
+            window.currentUser.unlocked_zombies.push(data.reward.id);
+          }
+          localStorage.setItem('pvz_user', JSON.stringify(window.currentUser));
+        }
+      }
+      if (data.reward && data.reward.type === 'coins') {
+        if (window.currentUser) {
+          window.currentUser.coins = (window.currentUser.coins || 0) + (data.reward.amount || 0);
+          localStorage.setItem('pvz_user', JSON.stringify(window.currentUser));
+        }
+      }
       if (data.reward && data.reward.emoji) {
         showBoxAnimation(data.reward);
       } else {
