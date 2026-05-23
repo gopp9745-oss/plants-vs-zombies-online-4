@@ -31,8 +31,7 @@ const INTERPOLATION_DELAY = 100;
 
 let playerStatus = { plant: 'online', zombie: 'online' };
 
-const plantEmojis = ['🌻', '🌱', '🥜', '🍒', '❄️', '🔁', '💣', '👯'];
-const zombieEmojis = ['🧟', '🧟‍♂️', '🪖', '🏃', '👹', '💃', '🏈', '🎣'];
+
 
 const PLANTS = {
   1: { name: 'Подсолнух', cost: 50, emoji: '🌻', type: 'producer' },
@@ -46,10 +45,12 @@ const PLANTS = {
 const ZOMBIES = {
   1: { name: 'Обычный', cost: 50, hp: 100, speed: 1, emoji: '🧟' },
   2: { name: 'Конус', cost: 75, hp: 200, speed: 1, emoji: '🧟‍♂️' },
-  3: { name: 'Ведро', cost: 100, hp: 350, speed: 1, emoji: '🪖' },
-  4: { name: 'Бегун', cost: 60, hp: 80, speed: 2, emoji: '🏃' },
-  5: { name: 'Гигант', cost: 150, hp: 500, speed: 0.5, emoji: '👹' },
-  6: { name: 'Танцор', cost: 125, hp: 150, speed: 1.2, emoji: '💃' }
+  3: { name: 'Ведро', cost: 100, hp: 350, speed: 0.8, emoji: '🪖' },
+  4: { name: 'Футболист', cost: 200, hp: 500, speed: 2, emoji: '🏃' },
+  5: { name: 'Танцор', cost: 125, hp: 150, speed: 1.5, emoji: '💃' },
+  6: { name: 'Гаргантюа', cost: 300, hp: 1000, speed: 0.5, emoji: '👹' },
+  7: { name: 'Имп', cost: 80, hp: 80, speed: 2.5, emoji: '👾' },
+  8: { name: 'Зомбони', cost: 200, hp: 600, speed: 1.2, emoji: '🏎️' },
 };
 
 function getInterpolationFactor() {
@@ -171,7 +172,7 @@ function renderActionBar() {
   itemsList.forEach((item, index) => {
     const div = document.createElement('div');
     div.className = 'action-item';
-    const emoji = role === 'plant' ? plantEmojis[index] : zombieEmojis[index];
+    const emoji = role === 'plant' ? (PLANTS[item.id]?.emoji || item.emoji || '🌱') : (ZOMBIES[item.id]?.emoji || item.emoji || '🧟');
     const cost = role === 'plant' ? `☀️${item.cost}` : `❤️${item.hp}`;
     div.innerHTML = `<div class="emoji">${emoji}</div><div class="name">${item.name}</div><div class="cost">${cost}</div>`;
     div.onclick = () => {
