@@ -3,29 +3,29 @@ const { query } = require('../db');
 const router = express.Router();
 
 const ALL_PLANTS = [
-  { id: 1, name: 'Подсолнух', cost: 50, emoji: '', type: 'producer', desc: 'Производит солнце', price: 0 },
-  { id: 2, name: 'Горохострел', cost: 100, emoji: '', type: 'shooter', desc: 'Стреляет горохом', price: 0 },
-  { id: 3, name: 'Стена-орех', cost: 50, emoji: '', type: 'wall', desc: 'Блокирует зомби', price: 0 },
-  { id: 4, name: 'Вишня-бомба', cost: 150, emoji: '', type: 'explosive', desc: 'Взрывает область 3x3', price: 200 },
-  { id: 5, name: 'Снежный горох', cost: 175, emoji: '', type: 'slow', desc: 'Замедляет зомби', price: 300 },
-  { id: 6, name: 'Повторитель', cost: 200, emoji: '', type: 'repeater', desc: 'Двойной выстрел', price: 400 },
-  { id: 7, name: 'Кактус', cost: 125, emoji: '', type: 'shooter', desc: 'Стреляет шипами', price: 250 },
-  { id: 8, name: 'Тыква', cost: 75, emoji: '', type: 'armor', desc: 'Защитная оболочка', price: 150 },
-  { id: 9, name: 'Магнит', cost: 100, emoji: '', type: 'utility', desc: 'Забирает предметы зомби', price: 350 },
-  { id: 10, name: 'Гриб-взрыв', cost: 25, emoji: '', type: 'explosive', desc: 'Дешёвый взрыв', price: 100 },
-  { id: 11, name: 'Зонт', cost: 50, emoji: '', type: 'utility', desc: 'Защита от воздушных', price: 200 },
-  { id: 12, name: 'Кофе', cost: 75, emoji: '', type: 'buff', desc: 'Ускоряет растения', price: 300 }
+  { id: 1, name: 'Подсолнух', cost: 50, emoji: '🌻', type: 'producer', desc: 'Производит солнце', price: 0 },
+  { id: 2, name: 'Горохострел', cost: 100, emoji: '🌱', type: 'shooter', desc: 'Стреляет горохом', price: 0 },
+  { id: 3, name: 'Стена-орех', cost: 50, emoji: '🥜', type: 'wall', desc: 'Блокирует зомби', price: 0 },
+  { id: 4, name: 'Вишня-бомба', cost: 150, emoji: '🍒', type: 'explosive', desc: 'Взрывает область 3x3', price: 200 },
+  { id: 5, name: 'Снежный горох', cost: 175, emoji: '❄️', type: 'slow', desc: 'Замедляет зомби', price: 300 },
+  { id: 6, name: 'Повторитель', cost: 200, emoji: '🔁', type: 'repeater', desc: 'Двойной выстрел', price: 400 },
+  { id: 7, name: 'Кактус', cost: 125, emoji: '🌵', type: 'shooter', desc: 'Стреляет шипами', price: 250 },
+  { id: 8, name: 'Тыква', cost: 75, emoji: '🎃', type: 'armor', desc: 'Защитная оболочка', price: 150 },
+  { id: 9, name: 'Магнит', cost: 100, emoji: '🧲', type: 'utility', desc: 'Забирает предметы зомби', price: 350 },
+  { id: 10, name: 'Гриб-взрыв', cost: 25, emoji: '🍄', type: 'explosive', desc: 'Дешёвый взрыв', price: 100 },
+  { id: 11, name: 'Зонт', cost: 50, emoji: '☂️', type: 'utility', desc: 'Защита от воздушных', price: 200 },
+  { id: 12, name: 'Кофе', cost: 75, emoji: '☕', type: 'buff', desc: 'Ускоряет растения', price: 300 }
 ];
 
 const ALL_ZOMBIES = [
-  { id: 1, name: 'Обычный', hp: 100, speed: 1, emoji: '', price: 0 },
-  { id: 2, name: 'Конус', hp: 200, speed: 1, emoji: '', price: 0 },
-  { id: 3, name: 'Ведро', hp: 350, speed: 0.8, emoji: '', price: 0 },
-  { id: 4, name: 'Футболист', hp: 500, speed: 2, emoji: '', price: 300 },
-  { id: 5, name: 'Танцор', hp: 150, speed: 1.5, emoji: '', price: 250 },
-  { id: 6, name: 'Гаргантюа', hp: 1000, speed: 0.5, emoji: '', price: 500 },
-  { id: 7, name: 'Имп', hp: 80, speed: 2.5, emoji: '', price: 150 },
-  { id: 8, name: 'Зомбони', hp: 600, speed: 1.2, emoji: '', price: 400 }
+  { id: 1, name: 'Обычный', hp: 100, speed: 1, emoji: '🧟', price: 0 },
+  { id: 2, name: 'Конус', hp: 200, speed: 1, emoji: '🧟‍♂️', price: 0 },
+  { id: 3, name: 'Ведро', hp: 350, speed: 0.8, emoji: '🪖', price: 0 },
+  { id: 4, name: 'Футболист', hp: 500, speed: 2, emoji: '🏃', price: 300 },
+  { id: 5, name: 'Танцор', hp: 150, speed: 1.5, emoji: '💃', price: 250 },
+  { id: 6, name: 'Гаргантюа', hp: 1000, speed: 0.5, emoji: '👹', price: 500 },
+  { id: 7, name: 'Имп', hp: 80, speed: 2.5, emoji: '👾', price: 150 },
+  { id: 8, name: 'Зомбони', hp: 600, speed: 1.2, emoji: '🏎️', price: 400 }
 ];
 
 const BOXES = [

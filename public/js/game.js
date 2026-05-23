@@ -177,7 +177,7 @@ function renderActionBar() {
   itemsList.forEach((item, index) => {
     const div = document.createElement('div');
     div.className = 'action-item';
-    const emoji = role === 'plant' ? (PLANTS[item.id]?.emoji || item.emoji || '🌱') : (ZOMBIES[item.id]?.emoji || item.emoji || '🧟');
+    const emoji = item.emoji || (role === 'plant' ? (PLANTS[item.id]?.emoji || '🌱') : (ZOMBIES[item.id]?.emoji || '🧟'));
     const cost = role === 'plant' ? `☀️${item.cost}` : `❤️${item.hp}`;
     div.innerHTML = `<div class="emoji">${emoji}</div><div class="name">${item.name}</div><div class="cost">${cost}</div>`;
     div.onclick = () => {
